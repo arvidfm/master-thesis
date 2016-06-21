@@ -1,0 +1,29 @@
+\documentclass[11pt]{report}
+
+\usepackage{kththesis}
+\usepackage{fontspec}
+\usepackage{csquotes}
+
+\usepackage[backend=biber]{biblatex}
+\addbibresource{references.bib}
+
+\usepackage{lipsum}
+
+\title{Dimensionality reduction for visualisation}
+\author{Arvid Fahlström Myrman}
+\supervisor{Giampiero Salvi}
+\examiner{Olov Engwall}
+
+\begin{document}
+
+\titlepage
+
+\input{00-abstract.tex}
+\input{01-introduction.tex}
+\input{02-theory.tex}
+\input{03-related-work.tex}
+\input{04-methods.tex}
+
+\printbibliography
+
+\end{document}
