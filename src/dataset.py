@@ -23,29 +23,46 @@ class _Section:
         self._root = root
         self._group = group
 
-        if not '_subsections' in self._group:
-            self._group.create_dataset('_subsections', (0,), chunks=True,
-                                       maxshape=(None,), dtype=ref_dtype)
-
-        self._subsections = self._group['_subsections']
+        if not '_subsections_num' in self._group.attrs:
+            self._group.attrs['_subsections_num'] = 0
 
     def create_section(self, name=None, *, data=None, metadata=None):
-        num_subsections = self._subsections.shape[0]
-        if name is None:
-            name = '_subsection{}'.format(num_subsections)
+        num_subsections = self._group.attrs['_subsections_num']
+        key = '_subsection{}'.format(num_subsections)
 
-        subsection = self._group.create_group(name)
-        self._subsections.resize((num_subsections + 1,))
-        self._subsections[-1] = subsection.ref
+        subsection = self._group.create_group(key)
+        self._group.attrs['_subsections_num'] = num_subsections + 1
+        if name is not None:
+            subsection.attrs['_name'] = name
+            self._group.attrs[name] = num_subsections
 
         return Section(self, self._root, subsection, data, metadata)
 
+    @property
+    def name(self):
+        try:
+            return self._group.attrs['_name']
+        except KeyError:
+            return None
+
     def __getitem__(self, key):
-        if isinstance(key, int):
-            subsection = self._subsections[key]
-            return Section(self, self._root, self._group[subsection], None, None)
-        else:
-            return Section(self, self._root, self._group[key], None, None)
+        if not isinstance(key, int):
+            key = self._group.attrs[key]
+
+        name = "_subsection{}".format(key)
+        return Section(self, self._root, self._group[name], None, None)
+
+    def __len__(self):
+        return self._group.attrs['_subsections_num']
+
+    def __iter__(self):
+        for i in range(len(self)):
+            yield self[i]
+
+    def deepiter(self):
+        for child in self:
+            yield child
+            yield from child.deepiter()
 
 class Section(_Section):
 
