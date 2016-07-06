@@ -124,8 +124,17 @@ class Section(_Section):
     @property
     def data(self):
         start, end = self._group.attrs['_start'], self._group.attrs['_end']
-        return self._root._data[start:end]
+        return self._root.data[start:end]
 
+    @property
+    def sectiondata(self):
+        start = self._group.attrs['_start']
+        if len(self) > 0:
+            end = self[0]._group.attrs['_start']
+        else:
+            end = self._group.attrs['_end']
+
+        return self._root.data[start:end]
 
 class Dataset(_Section):
 
