@@ -1,20 +1,16 @@
 
+import functools
 import math
 import pickle
 
 import numpy as np
 
+import click
 import h5py
 
 ref_dtype = h5py.special_dtype(ref=h5py.Reference)
 
 MAX_ATTRIBUTE_SIZE = 64000
-
-def nondestructive():
-    pass
-
-def inplace():
-    pass
 
 class _Section:
 
@@ -48,6 +44,8 @@ class _Section:
     def __getitem__(self, key):
         if not isinstance(key, int):
             key = self._group.attrs[key]
+        if key < 0:
+            key = len(self) + key
 
         name = "_subsection{}".format(key)
         return Section(self, self._root, self._group[name], None, None)
@@ -77,7 +75,7 @@ class Section(_Section):
 
         if data is not None:
             end = start + data.shape[0]
-            dataset.resize((end, *self._root._dims))
+            dataset.resize((end, *self._root.dims))
             dataset[start:] = data
 
             cur = self
@@ -134,7 +132,7 @@ class Section(_Section):
         else:
             end = self._group.attrs['_end']
 
-        return self._root.data[start:end]
+        return self._root.data[start:end] if end > start else None
 
 class Dataset(_Section):
 
@@ -143,11 +141,21 @@ class Dataset(_Section):
 
         if dims is None:
             self._data = self._group['_data']
-            self._dims = self._data.shape[1:]
+            self.dims = self._data.shape[1:]
         else:
             self._data = self._group.create_dataset(
                 "_data", (0, *dims), dtype=dtype, chunks=True, maxshape=(None, *dims))
-            self._dims = dims
+            self.dims = dims
+
+    def clear_sections(self):
+        for subsection in self._group:
+            if subsection != '_data':
+                del self._group[subsection]
+
+        for attr in self._group.attrs:
+            del self._group.attrs[attr]
+
+        self._group.attrs['_subsections_num'] = 0
 
     @property
     def data(self):
@@ -162,29 +170,29 @@ class DataFile:
     def create_dataset(self, name, dims, dtype):
         return Dataset(self._hfile.create_group(name), dims, dtype)
 
+    def copy(self, source, dest, keep_sections=True):
+        if keep_sections:
+            self._hfile.copy(source, dest)
+        else:
+            self._hfile.copy('{}/_data'.format(source), '{}/_data'.format(dest))
+            self._hfile[dest].attrs['_subsections_num'] = 0
+
     def __getitem__(self, key):
         return Dataset(self._hfile[key], None, None)
 
     def __delitem__(self, key):
         del self._hfile[key]
 
+
+class Hdf5Type(click.ParamType):
+    def convert(self, value, param, ctx):
+        try:
+            return DataFile(value)
+        except OSError:
+            self.fail("{} is not a valid HDF5 file".format(value), param, ctx)
+
+HDF5TYPE = Hdf5Type()
+
 if __name__ == '__main__':
-    import tempfile
-    f = tempfile.NamedTemporaryFile()
-    df = DataFile(f.name)
-    samples = df.create_dataset('samples', (), 'int')
-    s0 = samples.create_section('s0')
-    s01 = s0.create_section('s01', data=np.array([1, 2, 3, 4]))
-    s02 = s0.create_section('s02', data=2*np.array([1, 2, 3, 4]))
-    print(s0.data, s01.data, s02.data)
-    s1 = samples.create_section('s1')
-    s11 = s1.create_section(data=np.array([1, 2, 3, 4, 5, 6, 7]), metadata="yes")
-    s12 = s1.create_section(data=np.array([1, 2, 3]), metadata=(1, 2))
-    print(s0.data, s01.data, s02.data, s1.data, s11.data, s12.data)
-    print(samples.data[:])
-    print(s11.metadata, s12.metadata)
-    s12.metadata = b'\x00'
-    print(s12.metadata)
-    print(df['samples'].data[:])
-    print(list(df['samples']['s1']._group))
-    print(df['samples'][0][0].data)
+    pass
+    #main()
