@@ -1,6 +1,6 @@
-\documentclass[11pt]{report}
+\documentclass{kththesis}
 
-\usepackage{kththesis}
+%\usepackage{kththesis}
 \usepackage{fontspec}
 \usepackage{csquotes}
 
@@ -11,15 +11,24 @@
 \usepackage{lipsum}
 
 \title{Improving inter-speaker performance in unsupervised phone discovery using speaker identity side information}
+\alttitle{Detta är den svenska översättningen av titeln}
 \author{Arvid Fahlström Myrman}
+\email{arvidfm@kth.se}
 \supervisor{Giampiero Salvi}
 \examiner{Olov Engwall}
+\programme{Master in Computer Science}
+\school{School of Computer Science and Communication}
+\date{\today}
 
 \begin{document}
 
-\titlepage
+\flyleaf
 
 \input{00-abstract.tex}
+
+\tableofcontents
+\mainmatter
+
 \input{01-introduction.tex}
 \input{02-theory.tex}
 \input{03-related-work.tex}
