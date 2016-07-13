@@ -2,7 +2,47 @@
 \chapter{Theory}
 
 \section{Audio processing for speech recognition}
+
+An important step in most speech recognition applications is feature extraction: From a raw audio signal we wish to extract information (features) that can be used to effectively process or model the speech to achieve some desired result.
+As the exact types of features used vary depending on the model used and the goal of the application, this section will focus on some particularly common features used in speech recognition.
+Additionally, some standard methods of processing speech that take into consideration the sequential and dynamic nature of speech will be discussed.
+
+\subsection{Audio signals}
+
+In the real world speech takes the form of a pressure wave generated as air is pushed through the vocal tract.
+The pressure wave as perceived from a single point in space can be described as a continuous signal $x(t)\; (t\in \mathbb{R})$ that varies smoothly in time, with $x(t)$ at each time $t$ describing the amplitude of the wave relative to the ambient pressure.
+Our perception of the signal depends not on the absolute value of $x(t)$ at any given time instant, but rather on how it varies in time.
+As an example, take a simple sine wave $x(t) = \sin(2\pi f t)$; though the signal oscillates continuously in time, a human would perceive the signal as a single constant sound of frequency $f$.
+
+However, unlike the human ear, digital computers are unable to handle signals with an infinitely high time resolution, and as a consequence the signal must be somehow discretised before it can be processed further by speech applications.
+This is done by taking samples of the signal at fixed time steps given by a sampling frequency $f_s$ (e.g. \SI{16000}{\Hz}), specifying the number of samples taken per second.
+The resulting sampled signal $x[n]\; (n \in \mathbb{Z})$ is a discrete-time approximation of the original signal $x(t)$.
+
 \subsection{Short-time Fourier transform}
+
+\todo[inline]{include a figure showing the transition from time to frequency domain}
+\todo[inline]{maybe mention window functions?}
+
+To mirror how humans percieve audio signals it is useful to transfer the signal to some form that better captures the fluctuations of the signal.
+One way is to analyse the \emph{frequency content} of the signal using the Fourier transform.
+The Fourier transform approximates the signal using a sum of sine and cosine waves of different frequencies, giving the amplitude of each such wave, which in turn can be interpreted as the energy content of the signal at the corresponding frequency.
+In particular, the discrete Fourier transform (DFT), defined as
+\[
+X(k) = \sum_{n=0}^{N-1} x[n]e^{-j2\pi kn/N}
+\]
+where $j$ is the imaginary unit and $k \in [0,\, N-1]$ corresponds to the frequency $f = \frac{k}{N}f_s$, gives the frequency content of a finite discrete-time signal of length $N$ samples.
+The energy density, or the energy distribution over frequency, is given by $\left|X(k)\right|^2$.
+The DFT can be calculated in $O(N \log N)$ asymptotic time using the fast Fourier transform algorithm (FFT), especially in the case where $N$ is chosen to be a power of 2 \parencite{cooley1965algorithm}.
+
+\todo[inline]{sources for the paragraph below}
+
+The DFT makes certain assumptions regarding the nature of the signal.
+In particular, it assumes that the signal is periodic, which is emphatically not true in general for speech signals.
+However, a speech signal can be thought to be \emph{approximately periodic} over a very short time period.
+This gives rise to the so-called short-time Fourier transform (STFT), where the DFT is calculated repeatedly on short sections of the signal using a sliding window.
+A typical window length is \SI{25}{\ms}, and it is generally shifted forward about \SI{10}{\ms} between each DFT calculation.
+
+\subsection{Mel-scale filter banks}
 \subsection{Mel frequency cepstral coefficients}
 \subsection{Modelling evolution over time}
 \subsection{Dynamic time warping}
