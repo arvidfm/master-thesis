@@ -36,6 +36,10 @@
 
 \ifxeorlua
   \RequirePackage{fontspec}
+  % this enebles TeX style ligatures such as ---, '', ``, and so on
+  \defaultfontfeatures{
+    Ligatures={TeX}
+  }
   \setmainfont{FreeSerif}
   \setsansfont{FreeSans}
   \setmonofont{FreeMono}
