@@ -7,10 +7,12 @@ An important step in most speech recognition applications is feature extraction:
 As the exact types of features used vary depending on the model used and the goal of the application, this section will focus on some particularly common features used in speech recognition.
 Additionally, some standard methods of processing speech that take into consideration the sequential and dynamic nature of speech will be discussed.
 
+\todo[inline]{reference one or two books for further reading}
+
 \subsection{Audio signals}
 
 In the real world speech takes the form of a pressure wave generated as air is pushed through the vocal tract.
-The pressure wave as perceived from a single point in space can be described as a continuous signal $x(t)\; (t\in \mathbb{R})$ that varies smoothly in time, with $x(t)$ at each time $t$ describing the amplitude of the wave relative to the ambient pressure.
+The pressure wave as perceived from a single point in space can be described as a continuous signal $x(t)\; (t\in \mathbb{R})$ \todo{notation for domain?} that varies smoothly in time, with $x(t)$ at each time $t$ describing the amplitude of the wave relative to the ambient pressure.
 Our perception of the signal depends not on the absolute value of $x(t)$ at any given time instant, but rather on how it varies in time.
 As an example, take a simple sine wave $x(t) = \sin(2\pi f t)$; though the signal oscillates continuously in time, a human would perceive the signal as a single constant sound of frequency $f$.
 
@@ -22,6 +24,7 @@ The resulting sampled signal $x[n]\; (n \in \mathbb{Z})$ is a discrete-time appr
 
 \todo[inline]{include a figure showing the transition from time to frequency domain}
 \todo[inline]{maybe mention window functions?}
+\todo[inline]{something about the Nyquist frequency}
 
 To mirror how humans percieve audio signals it is useful to transfer the signal to some form that better captures the fluctuations of the signal.
 One way is to analyse the \emph{frequency content} of the signal using the Fourier transform.
@@ -30,9 +33,9 @@ In particular, the discrete Fourier transform (DFT), defined as
 \[
 X(k) = \sum_{n=0}^{N-1} x[n]e^{-j2\pi kn/N}
 \]
-where $j$ is the imaginary unit and $k \in [0,\, N-1]$ corresponds to the frequency $f = \frac{k}{N}f_s$, gives the frequency content of a finite discrete-time signal of length $N$ samples.
-The energy density, or the energy distribution over frequency, is given by $\left|X(k)\right|^2$.
-The DFT can be calculated in $O(N \log N)$ asymptotic time using the fast Fourier transform algorithm (FFT), especially in the case where $N$ is chosen to be a power of 2 \parencite{cooley1965algorithm}.
+where $j$ is the imaginary unit and $k \in [0, N-1]$ corresponds to the frequency $f = \frac{k}{N}f_s$, gives the frequency content of a finite discrete-time signal of length $N$ samples.
+The energy density, or the energy distribution over frequency, is given by $S(k) = \left|X(k)\right|^2$.
+The DFT can be calculated in $O(N \log N)$ asymptotic time using the fast Fourier transform (FFT) algorithm, especially in the case where $N$ is chosen to be a power of 2 \parencite{cooley1965algorithm}.
 
 \todo[inline]{sources for the paragraph below}
 
@@ -41,11 +44,95 @@ In particular, it assumes that the signal is periodic, which is emphatically not
 However, a speech signal can be thought to be \emph{approximately periodic} over a very short time period.
 This gives rise to the so-called short-time Fourier transform (STFT), where the DFT is calculated repeatedly on short sections of the signal using a sliding window.
 A typical window length is \SI{25}{\ms}, and it is generally shifted forward about \SI{10}{\ms} between each DFT calculation.
+The result of the STFT is the 2D Fourier transform $X(m,k)$ over frequency $k$ and time step $m$, with corresponding energy density $S(m,k) = \left|X(k,m)\right|^2$.
 
 \subsection{Mel-scale filter banks}
+
+There are several problems with working directly with the output of the STFT. One is that the output is too high-dimensional, as $N$ is often chosen to be in the \numrange{512}{2048} range for the DFT.
+Unless very large amounts of data is available, this causes data sparsity issues, which can cause many kinds of models to underperform.
+Additionally, we are not really interested in the exact energy at every frequency step, but 
+rather the overall shape of the spectrum.
+
+Finally, all frequencies are not created equal, as the human ear does not discriminate between higher frequencies to the same extent as between lower frequencies.
+To model this phonemenon, scales in which a change in pitch corresponds roughly linearly to the subjective change in pitch perceived by a human have been empirically developed.
+One such scale, ubiquitous in speech technology, is the mel scale, which was developed through experiments where participants were told to produce a tone with half the perceived pitch of a reference tone \parencite{stevens1937scale}.
+A frequency $f$ can be converted to the mel scale through the following relation:
+\[
+  \mathrm{mel}(f) = 1127\log\left(1 + \frac{f}{700}\right)
+\]
+where $\log$ is the natural logarithm.
+As can be seen in \cref{fig:mel-scale}, as $f$ grows larger, the difference $\mathrm{mel}(f+\varepsilon) - \mathrm{mel}(f)$ becomes smaller.
+
+Addressing both the issues of dimensionality and perception, we construct the mel-scale filter bank.
+The filter bank is a set of $L$ triangular filters, with the middle points of the filters spaced linearly on the mel scale.
+In other words, if $f_1, f_2, \dots, f_L$ are the middle points of the filters specified in \si{\Hz}, $\mathrm{mel}(f_k) - \mathrm{mel}(f_{k-1}) = \mathrm{mel}(f_{k+1}) - \mathrm{mel}(f_k)$.
+The start and end points of the filters are the middle points of the previous and following filters, respectively, with the exception of the first filter whose start point is specified by a lower bound $f_{low}$, and the last filter whose end point is given by a higher bound $f_{high}$.
+The height of the peak of each filter can vary; common approaches are to ensure that the filters have either constant height or constant area.
+An illustration of a filter bank is given in \cref{fig:filter-bank}.
+Each filter is applied to the energy spectrum of the audio signal, giving the filter bank output $E(m,l) = \sum_{k=0}^{N-1}V_l(k)S(m,k)$, where $V_l(k)$ is the $(l+1)$th mel-scale filter.
+The resulting $L$ values at each time step $m$ form a rough approximation of the energy spectrum, with the resolution being higher for low frequencies than for high frequencies.
+$L$ is commonly chosen to be in the \numrange{20}{40} range, significantly lowering the dimensionality of the data.
+
 \subsection{Mel frequency cepstral coefficients}
+
+In certain applications, it is beneficial if the features generated are relatively decorrelated.
+For instance, this is the case when modelling the features using multivariate Gaussian distributions, where if the features are decorrelated the covariance matrix can be approximated using a diagonal matrix, significantly reducing the number of parameters that need to be learned.
+
+\todo[inline]{talk about what the DCT does}
+Unfortunately, the mel-scale filter bank outputs are \emph{not} decorrelated, as neighbouring frequencies tend to take on similar values in the energy spectrum.
+However, they can be made roughly decorrelated by taking the discrete cosine transform of the logarithm of the filter bank outputs, given as
+\[
+C(m,c) = \sum_{l=0}^{L-1} \log(E(m,l)) \cos\left[\frac{2\pi}{L}\left(l+\frac{1}{2}\right)c\right]
+\]
+for $c \in [0, L - 1]$.
+The resulting values are known as the mel-frequency cepstral coefficients (MFCCs).
+Usually only the first 13 or so coefficients coefficients are used, i.e. the coefficients corresponding to $c \in [0, 12]$, once again reducing the dimensionality of the data.
+
 \subsection{Modelling evolution over time}
+
+Speech is inherently sequential.
+This means that our perception of speech is not dependent on particular absolute values of the speech signal at particular points in time, but rather on how the signal evolves over time, and the exact realisation of individual speech sounds is formed through a complex interplay with neighbouring sounds.
+In addition, many speech sounds change over time by nature; examples include the diphthong /aɪ/ in the word \emph{my} /maɪ/, or the affricate /tʃ/ in \emph{teach} /tiːtʃ/, both acting as single units of speech, despite the onset and offset of the sounds being significantly different acoustically.
+
+Thus, it is a difficult task to recognise a speech sound based only on a single frame of audio.
+Instead, the model needs some way of incorporating information about the context of the frame.
+This can be done both at the model level and the feature level.
+Model-based approaches include hidden Markov models (HMMs), which encode information about how the speech can change in time in the form of probabilities, and recurrent neural networks (RNNs), which can take sequences as input and automatically find temporal patterns.
+
+Feature-based approaches, instead, incorporate temporal information directly into the features.
+One simple way is to extend each speech frame to include not only the current frame, but also the neighbouring frames before feeding it to the model.
+For instance, if our features consisted of the outputs of a mel-scaled filter bank of size 40 at different time steps $m$ and we wanted to include a context of 2 frames in both directions it time, the frame at each $m$ would be extended to include the frames at $m-2$, $m-1$, $m$, $m+1$ and $m+2$, resulting in a feature vector of size $40\cdot5 = 200$ at each time step.
+
+Another feature-based approach is to include approximations of the temporal derivatives in the feature vector, most commonly the first-order (velocity) and second-order (accerelation) derivatives.
+\todo[inline]{include derivation of the delta formulas here}
+
 \subsection{Dynamic time warping}
+
+Speech is also inherently dynamic.
+A single speaker if asked to repeat a word two times will not pronounce the word exactly the same both times, and the length of the utterances will also differ slightly.
+As a result of this, direct comparison of two utterances in order to measure their similarity becomes difficult.
+Dynamic time warping (DTW) attempts to solve this problem by finding the best alignment of the frames of the two utterances and measure the similarity based on this alignment.
+
+Let $d(\mat x, \mat y)$ be some local measure of the distance between the feature vectors $\mat x$ and $\mat y$ (e.g. the Euclidean distance) so that $d(\mat x, \mat y)$ is larger the further apart the feature vectors are.
+Let $\mat X = \{\mat x_1, \mat x_2, \dots, \mat x_n\}$ and $\mat Y = \{\mat y_1, \mat y_2, \dots, \mat y_m\}$ be sequences of feature vectors, and let $\mat X_{k:l}$ denote the subsequence of $\mat X$ starting at $k$ and ending at $l$. 
+We wish to find a global distance measure $D(\mat X, \mat Y)$ as a sum of the local distances between the feature vectors, based on some alignment that minimises this distance.
+All elements in both sequences must be used in the final alignment, but elements may be repeated at will to serve as padding.
+
+This can be expressed through the recurrence
+\begin{align*}
+D(\mat X_{1:k}, \mat Y_{1:l}) = d(\mat x_k, \mat y_l) + \min(&D(\mat X_{1:k-1}, \mat Y_{1:l-1}), \\
+& D(\mat X_{1:k-1}, \mat Y_{1:l}), \\
+& D(\mat X_{1:k}, \mat Y_{1:l-1}))
+\end{align*}
+with the base cases
+\begin{align*}
+  D(\mat X_{1:0}, \mat Y_{1:0}) &= 0 \\
+  D(\mat X_{1:0}, \mat Y_{1:k}) = D(\mat X_{1:k}, \mat Y_{1:0}) &= \infty.
+\end{align*}
+Padding with $\infty$ is required to ensure that the alignment starts with the first element in both sequences.
+
+The way the recurrence is defined enables evaluation of $D(\mat X, \mat Y)$ in $O(nm)$ time using dynamic programming.
+By saving backpointers during the calculation, it is also possible to retrieve the actual alignment.
 
 \section{Machine learning}
 \subsection{Important concepts}

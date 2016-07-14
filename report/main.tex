@@ -20,13 +20,19 @@
 \usepackage{siunitx}
 \usepackage{todonotes}
 \usepackage[backend=biber]{biblatex}
-\addbibresource{references.bib}
 \addbibresource{../../../papers/citations.bib}
-
-\pgfplotsset{compat=newest}
+\addbibresource{../../../papers/linguistics.bib}
 
 \usepackage{lipsum}
 
+% -- options
+\pgfplotsset{compat=newest}
+
+% -- custom commands
+% bold matrix
+\newcommand{\mat}[1]{\mathbf{#1}}
+
+% -- title page
 \title{Improving inter-speaker performance in unsupervised phone discovery using speaker identity side information}
 \alttitle{Detta är den svenska översättningen av titeln}
 \author{Arvid Fahlström Myrman}
