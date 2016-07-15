@@ -7,7 +7,8 @@ An important step in most speech recognition applications is feature extraction:
 As the exact types of features used vary depending on the model used and the goal of the application, this section will focus on some particularly common features used in speech recognition.
 Additionally, some standard methods of processing speech that take into consideration the sequential and dynamic nature of speech will be discussed.
 
-\todo[inline]{reference one or two books for further reading}
+This section serves as a superficial introduction to signal processing for speech recognition.
+For a more in-depth description, see a book on signal processing such as \textcite{quatieri2002discrete}, or see \textcite{huang2001spoken} for an introduction to speech recognition in particular.
 
 \subsection{Audio signals}
 
@@ -16,8 +17,9 @@ The pressure wave as perceived from a single point in space can be described as 
 Our perception of the signal depends not on the absolute value of $x(t)$ at any given time instant, but rather on how it varies in time.
 As an example, take a simple sine wave $x(t) = \sin(2\pi f t)$; though the signal oscillates continuously in time, a human would perceive the signal as a single constant sound of frequency $f$.
 
+\todo[inline]{don't imply that human hearing has infinite resolution}
 However, unlike the human ear, digital computers are unable to handle signals with an infinitely high time resolution, and as a consequence the signal must be somehow discretised before it can be processed further by speech applications.
-This is done by taking samples of the signal at fixed time steps given by a sampling frequency $f_s$ (e.g. \SI{16000}{\Hz}), specifying the number of samples taken per second.
+This is done by taking samples of the signal at fixed time steps given by a sampling frequency $f_s$ (e.g.\ \SI{16000}{\Hz}), specifying the number of samples taken per second.
 The resulting sampled signal $x[n]\; (n \in \mathbb{Z})$ is a discrete-time approximation of the original signal $x(t)$.
 
 \subsection{Short-time Fourier transform}
@@ -44,7 +46,7 @@ In particular, it assumes that the signal is periodic, which is emphatically not
 However, a speech signal can be thought to be \emph{approximately periodic} over a very short time period.
 This gives rise to the so-called short-time Fourier transform (STFT), where the DFT is calculated repeatedly on short sections of the signal using a sliding window.
 A typical window length is \SI{25}{\ms}, and it is generally shifted forward about \SI{10}{\ms} between each DFT calculation.
-The result of the STFT is the 2D Fourier transform $X(m,k)$ over frequency $k$ and time step $m$, with corresponding energy density $S(m,k) = \left|X(k,m)\right|^2$.
+The result of the STFT is the 2D Fourier transform $X(m,k)$ over time step $m$ and frequency $k$, with corresponding energy density $S(m,k) = \left|X(k,m)\right|^2$.
 
 \subsection{Mel-scale filter banks}
 
@@ -65,7 +67,7 @@ As can be seen in \cref{fig:mel-scale}, as $f$ grows larger, the difference $\ma
 
 Addressing both the issues of dimensionality and perception, we construct the mel-scale filter bank.
 The filter bank is a set of $L$ triangular filters, with the middle points of the filters spaced linearly on the mel scale.
-In other words, if $f_1, f_2, \dots, f_L$ are the middle points of the filters specified in \si{\Hz}, $\mathrm{mel}(f_k) - \mathrm{mel}(f_{k-1}) = \mathrm{mel}(f_{k+1}) - \mathrm{mel}(f_k)$.
+In other words, if $f_1, f_2, \dots, f_L$ are the middle points of the filters specified in \si{\Hz}, $\mathrm{mel}(f_k) - \mathrm{mel}(f_{k-1}) = \mathrm{mel}(f_{k+1}) - \mathrm{mel}(f_k)$, $k \in [2, L-1]$.
 The start and end points of the filters are the middle points of the previous and following filters, respectively, with the exception of the first filter whose start point is specified by a lower bound $f_{low}$, and the last filter whose end point is given by a higher bound $f_{high}$.
 The height of the peak of each filter can vary; common approaches are to ensure that the filters have either constant height or constant area.
 An illustration of a filter bank is given in \cref{fig:filter-bank}.
@@ -76,7 +78,7 @@ $L$ is commonly chosen to be in the \numrange{20}{40} range, significantly lower
 \subsection{Mel frequency cepstral coefficients}
 
 In certain applications, it is beneficial if the features generated are relatively decorrelated.
-For instance, this is the case when modelling the features using multivariate Gaussian distributions, where if the features are decorrelated the covariance matrix can be approximated using a diagonal matrix, significantly reducing the number of parameters that need to be learned.
+For instance, this is the case when modelling the features using multivariate Gaussian distributions, where if the features are decorrelated the covariance matrix can be approximated using a diagonal matrix, significantly reducing the number of parameters that need to be learnt.
 
 \todo[inline]{talk about what the DCT does}
 Unfortunately, the mel-scale filter bank outputs are \emph{not} decorrelated, as neighbouring frequencies tend to take on similar values in the energy spectrum.
@@ -86,12 +88,12 @@ C(m,c) = \sum_{l=0}^{L-1} \log(E(m,l)) \cos\left[\frac{2\pi}{L}\left(l+\frac{1}{
 \]
 for $c \in [0, L - 1]$.
 The resulting values are known as the mel-frequency cepstral coefficients (MFCCs).
-Usually only the first 13 or so coefficients coefficients are used, i.e. the coefficients corresponding to $c \in [0, 12]$, once again reducing the dimensionality of the data.
+Usually only the first 13 or so coefficients are used at each time step, i.e.\ the coefficients corresponding to $c \in [0, 12]$, once again reducing the dimensionality of the data.
 
 \subsection{Modelling evolution over time}
 
 Speech is inherently sequential.
-This means that our perception of speech is not dependent on particular absolute values of the speech signal at particular points in time, but rather on how the signal evolves over time, and the exact realisation of individual speech sounds is formed through a complex interplay with neighbouring sounds.
+This means that our perception of speech is not dependent on particular absolute values of the speech signal at particular points in time, but rather on how the signal evolves over time, and the exact realisation of individual speech sounds is formed through complex interplay with neighbouring sounds.
 In addition, many speech sounds change over time by nature; examples include the diphthong /aɪ/ in the word \emph{my} /maɪ/, or the affricate /tʃ/ in \emph{teach} /tiːtʃ/, both acting as single units of speech, despite the onset and offset of the sounds being significantly different acoustically.
 
 Thus, it is a difficult task to recognise a speech sound based only on a single frame of audio.
@@ -113,7 +115,7 @@ A single speaker if asked to repeat a word two times will not pronounce the word
 As a result of this, direct comparison of two utterances in order to measure their similarity becomes difficult.
 Dynamic time warping (DTW) attempts to solve this problem by finding the best alignment of the frames of the two utterances and measure the similarity based on this alignment.
 
-Let $d(\mat x, \mat y)$ be some local measure of the distance between the feature vectors $\mat x$ and $\mat y$ (e.g. the Euclidean distance) so that $d(\mat x, \mat y)$ is larger the further apart the feature vectors are.
+Let $d(\mat x, \mat y)$ be some local measure of the distance between the feature vectors $\mat x$ and $\mat y$ (e.g.\ the Euclidean distance) so that $d(\mat x, \mat y)$ is larger the further apart the feature vectors are.
 Let $\mat X = \{\mat x_1, \mat x_2, \dots, \mat x_n\}$ and $\mat Y = \{\mat y_1, \mat y_2, \dots, \mat y_m\}$ be sequences of feature vectors, and let $\mat X_{k:l}$ denote the subsequence of $\mat X$ starting at $k$ and ending at $l$. 
 We wish to find a global distance measure $D(\mat X, \mat Y)$ as a sum of the local distances between the feature vectors, based on some alignment that minimises this distance.
 All elements in both sequences must be used in the final alignment, but elements may be repeated at will to serve as padding.
@@ -135,14 +137,90 @@ The way the recurrence is defined enables evaluation of $D(\mat X, \mat Y)$ in $
 By saving backpointers during the calculation, it is also possible to retrieve the actual alignment.
 
 \section{Machine learning}
+
+Machine learning is the practice of automatically finding patterns in data, and use these patterns to make future predictions or perform decision making.
+The learning process generally takes the form of setting up an appropriate mathematical or statistical model, and automatically changing the parameters of the model to fit the data.
+Machine learning is commonly employed in a variety of fields such as speech recognition, computer vision and natural language processing (NLP).
+
+Using text parsing in NLP as an example, machine learning provides several advantages over the classic approach of hand-engineered rules written by human experts, including:
+\todo[inline]{make better arguments}
+\begin{itemize}
+ \item Grammatical rules are inferred based on actual data, rather than the expert's conception of how the language works.
+ \item A computer can quickly go through an amount of data that would be far too vast for a human expert to analyse by hand.
+ \item A machine learning model can incorporate statistical information learnt from large amounts of data, enabling it to return multiple possible interpretations along with confidence scores.
+\end{itemize}
+Similar advantages can be seen in other fields, such as speech recognition where it is simply not feasible to construct hand-written rules that can identify speech sounds from raw audio data.
+
+This section will lightly touch upon machine learning concepts relevant to this thesis; for a proper introduction to the field, see \textcite{murphy2012machine}.
+
 \subsection{Important concepts}
 \subsubsection{Supervised and unsupervised learning}
-\subsubsection{Classification}
+
+A large number of techniques in machine learning can be broadly considered to be either supervised techniques, which take a set of data along with corresponding labels and try to learn the mapping from the data to the labels, or unsupervised techniques, which try to find ``interesting'' (as defined by the task at hand) patterns in unlabelled data.
+
+As an example, consider the task of speech recognition.
+The data set used to train our model consists of speech data along with a set of phonetic transcriptions, so that what is being said at each time instant is known.
+Our task is to try to learn this mapping from speech to transcription, taking advantage of all available data.
+This is a typical example of supervised learning, as we have a known ``ground truth'' that we are trying to replicate.
+
+On the other hand, consider the case where our speech data is unlabelled, so that we do not know what is being said in a given utterance.
+Without the ground truth we do not have a reference we can use to learn the mapping from speech signal to transcription.
+Instead, our task is reduced to trying to find patterns in the data, by for example identifying repeating segments in the speech that could possibly correspond to speech sounds, or even whole words.
+Note, however, that even if we are able to correctly identify words in the speech, we still do not know the corresponding orthographic transcription.
+This is an example of unsupervised learning.
+
 \subsubsection{Regression}
+
+Regression is a supervised task where we are given input data $\mat x \in \mathbb{R}^m$---here real, though discrete input data is also common---and corresponding continuous output data $\mat y \in \mathbb{R}^n$, and our task is to find a function $f:\mathbb{R}^m \to \mathbb{R}^n$ that best preserves the relationship between input and output, and that can be used to predict output values for future input data.
+
+A typical example might be predicting house prices, where the input data consists of information such as floor area, garden area, proximity to public transport, etc., and the output is a scalar indicating the price.
+
+\subsubsection{Classification}
+
+Classification is a special case of regression where the output is a discrete class.
+Thus, the problem is finding a function $f:\mathbb{R}^m \to C$ where $C$ is the set of possible classes.
+In some cases a data point may belong to more than one class at a time, in which case the mapping function can be defined as $f:\mathbb{R}^m \to \{0,1\}^c$, where $c$ is the number of possible classes, and $f(\mat x)_k$ is $1$ if $\mat x$ belongs to class $k$; this is known as multi-label classification.
+
+A common classification task is image classification, where the objective is to identify the object or objects present in an image.
+The input is the value of each pixel in the image, and the output is the class or set of classes corresponding to the object(s) in the image.
+
 \subsubsection{Clustering}
+
+Clustering is an unsupervised task, where the goal is to somehow group the input data into distinct classes, such that data points in one class are more similar to each other than to data points in other classes.
+Both the concept of similarity and the interpretation of the different classes depends on the problem at hand.
+One example of clustering is the grouping of speech frames generated from an audio signal into distinct phonetic classes, with no prior knowledge of what phonetic classes are available.
+
 \subsection{Gaussian mixture models}
 
+\todo[inline]{is $P(k)$ rigorous notation? also the pdf notation}
+When performing clustering, the resulting clusters will strongly depend on our underlying assumptions.
+One common assumption is that each data point was generated by one of $K$ multivariate Gaussian distributions, each Gaussian $k$ having mean $\boldsymbol \mu_k$ and covariance matrix $\boldsymbol \Sigma_k$.
+The probability of the $k$th Gaussian generating a data point being $\pi_k = P(k \mid \boldsymbol \theta)$, where $\sum_{k=1}^K \pi_k = 1$.
+The probability of seeing a data point $\mat x$ is then described by the probability density function
+\[
+f(\mat x \mid \boldsymbol \theta) = \sum_{k=1}^K P(k \mid \boldsymbol \theta)f(\mat x \mid k, \boldsymbol \theta) = \sum_{k=1}^K \pi_k \mathcal{N}(\mat x;\; \boldsymbol \mu_k,\, \boldsymbol \Sigma_k)
+\]
+where $\boldsymbol \theta$ is the parameters of the model:
+\[
+ \boldsymbol \theta = \{\pi_1, \pi_2, \dots, \pi_K, \boldsymbol \mu_1, \boldsymbol \mu_2, \dots, \boldsymbol \mu_K, \boldsymbol \Sigma_1, \boldsymbol \Sigma_2, \dots, \boldsymbol \Sigma_K\}.
+\]
+
+This is known as a (finite, as the number of components $K$ is set \emph{a priori}) Gaussian mixture model (GMM).
+Clustering using a GMM is performed by initialising the parameters $\boldsymbol \theta$ to some (e.g.\ random) value, and then iteratively updating the parameters using the expectation maximisation (EM) algorithm to maximise the probability of the model having generated the data.
+See \textcite{murphy2012machine} for a detailed description of EM for GMMs.
+
+After training, the posterior distribution $P(k \mid \mat x, \boldsymbol \theta)$ can be calculated as
+\[
+P(k \mid \mat x, \boldsymbol \theta)
+= \frac{P(k \mid \boldsymbol \theta)f(\mat x \mid k, \boldsymbol \theta)}{f(\mat x \mid \boldsymbol \theta)}
+= \frac{P(k \mid \boldsymbol \theta)f(\mat x \mid k, \boldsymbol \theta)}{\sum_{l=1}^K P(l \mid \boldsymbol \theta)f(\mat x \mid l, \boldsymbol \theta)}
+= \frac{\pi_k \mathcal{N}(\mat x;\; \boldsymbol \mu_k, \boldsymbol \Sigma_k)}{\sum_{l=1}^K \pi_l \mathcal{N}(\mat x;\; \boldsymbol \mu_l, \boldsymbol \Sigma_l)},
+\]
+giving the probability of $\mat x$ belonging to class $k$.
+
 \section{Artificial neural networks}
+\textcite{goodfellow2016deep}
+
 \subsection{The perceptron}
 \subsection{The multi-layer perceptron}
 \subsection{Activation functions}
