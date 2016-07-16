@@ -19,11 +19,29 @@
 \usepackage{units}
 \usepackage{siunitx}
 \usepackage{todonotes}
-\usepackage[backend=biber]{biblatex}
-\addbibresource{../../../papers/citations.bib}
-\addbibresource{../../../papers/linguistics.bib}
 
 \usepackage{lipsum}
+
+% -- bibliography settings
+\usepackage[
+    backend=biber,
+    style=authoryear,
+    sorting=ynt,
+    sortcites=true, % sort grouped citations in main text by year
+    maxcitenames=1, % truncate > 2 names in main text to one name + et al
+    maxbibnames=99, % don't truncate names in bibliography
+    giveninits=true, % use initials for first and middle names in bibliography
+    uniquename=false, % don't disambiguate names in citations by adding e.g. initials
+    uniquelist=false, % don't override maxcitenames for the sake of disamgiuation
+    dashed=false, % don't replace repeated authors with a dash in the bibliography
+    backref=true, % include backreferences to the citations in the bibliography
+]{biblatex}
+% set the order of all names in the bibliography to Last Name, First Name
+% see http://tex.stackexchange.com/a/113574
+\DeclareNameAlias{sortname}{last-first}
+
+\addbibresource{../../../papers/citations.bib}
+\addbibresource{../../../papers/linguistics.bib}
 
 % -- options
 \pgfplotsset{compat=newest}
@@ -57,6 +75,7 @@
 \input{03-related-work.tex}
 \input{04-methods.tex}
 
-\printbibliography
+\newrefcontext[sorting=nyt] % sort by name in the bibliography
+\printbibliography[heading=bibintoc] % include bibliography in table of contents
 
 \end{document}
