@@ -10,4 +10,8 @@
 *.backup
 .dropbox.attr
 __pycache__
-
+buckeyecorpus
+*.out
+*.dat
+*.script
+*.table
