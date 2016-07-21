@@ -278,5 +278,37 @@ def normalize():
 def randomize():
     pass
 
+def lpc(samples, n):
+    alphas = []
+    for sample in np.atleast_2d(samples):
+        corr = np.correlate(sample, sample, mode='full')[len(sample) - 1:]
+        alpha = scipy.linalg.solve_toeplitz(corr[:n], corr[1:n+1])
+        alphas.append(alpha)
+    return np.array(alphas)
+
+def envelope(samples, fs, coeffs=18, resolution=512,
+             max_freq=5000, min_freq=100):
+    alpha = lpc(samples, coeffs)
+    steps = np.linspace(min_freq, max_freq, resolution)
+    exponents = np.outer(1j * 2 * np.pi * steps / fs,
+                         -np.arange(1, coeffs + 1))
+    spec = 1 / (1 - (alpha * np.exp(exponents)).sum(axis=1))
+    power = abs(spec) ** 2
+
+    return power, steps
+
+def formants(samples, fs, num_formants=3, return_spec=False, **kwargs):
+    power, steps = envelope(samples, fs, **kwargs)
+
+    # find values larger that both neighbours
+    local_maxima = (power[:-1] > power[1:])[1:] & (power[1:] > power[:-1])[:-1]
+    indices, = np.where(local_maxima)
+    formants = steps[indices + 1][:num_formants]
+
+    if return_spec:
+        return power, formants
+    else:
+        return formants
+
 if __name__ == '__main__':
     main()
