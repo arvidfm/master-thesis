@@ -1,0 +1,68 @@
+% Copyright (C) 2016  Arvid Fahlström Myrman
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 2 of the License, or
+% (at your option) any later version.
+%
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+%
+% You should have received a copy of the GNU General Public License along
+% with this program; if not, write to the Free Software Foundation, Inc.,
+% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+\begin{tikzpicture}
+  \begin{groupplot}[
+    group style={group size=3 by 2},
+    xmin=-3,xmax=3,ymin=-3,ymax=3,
+    width=6cm,height=6cm,
+    xtick=\empty,ytick=\empty,
+    view={0}{90},
+    surface/.style={
+      surf,shader=interp,samples=20,opacity=0.3,
+      colormap={surfmap}{[1cm] color(0cm)=(red); color(3cm)=(red); color(5cm)=(white); color(7cm)=(blue); color(10cm)=(blue)}
+    },
+    boundary/.style={dashed,black,very thick},
+    point meta min=-1,
+    point meta max=1
+  ]
+   \nextgroupplot[title={$y = x_1+x_2$},point meta min=-6,point meta max=6]
+   \addplot+[only marks] table[x=ax,y=ay] {data/circle_data.txt};
+   \addplot+[only marks] table[x=bx,y=by] {data/circle_data.txt};
+   \addplot3[surface] {x + y};
+   %\addplot[boundary] {-x};
+   
+   \nextgroupplot[title={$y = \tanh(x_1+x_2)$}]
+   \addplot+[only marks] table[x=ax,y=ay] {data/circle_data.txt};
+   \addplot+[only marks] table[x=bx,y=by] {data/circle_data.txt};
+   \addplot3[surface] {tanh(x + y)};
+   %\addplot[boundary] {-x};
+   
+   \nextgroupplot[title={$y = 2\varphi(x_1+x_2) - 1$}]
+   \addplot+[only marks] table[x=ax,y=ay] {data/circle_data.txt};
+   \addplot+[only marks] table[x=bx,y=by] {data/circle_data.txt};
+   \addplot3[surface] {2 * exp(-(x + y)^2) - 1};
+   %\addplot[boundary] {sqrt(-ln(0.5)) - x};
+   %\addplot[boundary] {-sqrt(-ln(0.5)) - x};
+   
+   \nextgroupplot[title={$y^1_1 = 2\varphi(x_1)-1$}]
+   \addplot+[only marks] table[x=ax,y=ay] {data/circle_data.txt};
+   \addplot+[only marks] table[x=bx,y=by] {data/circle_data.txt};
+   \addplot3[surface] {2 * exp(-x^2) - 1};
+   
+   \nextgroupplot[title={$y^1_2 = 2\varphi(x_2)-1$}]
+   \addplot+[only marks] table[x=ax,y=ay] {data/circle_data.txt};
+   \addplot+[only marks] table[x=bx,y=by] {data/circle_data.txt};
+   \addplot3[surface] {2 * exp(-y^2) - 1};
+   
+   \nextgroupplot[title={$y = 0.5y^1_1 + 0.5y^1_2 - 0.1$}]
+   \addplot+[only marks] table[x=ax,y=ay] {data/circle_data.txt};
+   \addplot+[only marks] table[x=bx,y=by] {data/circle_data.txt};
+   \addplot3[surface,samples=50] {exp(-x^2) + exp(-y^2) - 1.1};
+   %\addplot[boundary,domain=-1.517:1.517] {sqrt(-ln(1.1-exp(-x^2)))};
+   %\addplot[boundary,domain=-1.517:1.517] {-sqrt(-ln(1.1-exp(-x^2)))};
+  \end{groupplot}
+\end{tikzpicture}

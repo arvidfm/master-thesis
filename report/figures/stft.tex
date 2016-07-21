@@ -1,0 +1,44 @@
+% Copyright (C) 2016  Arvid Fahlström Myrman
+%
+% This program is free software; you can redistribute it and/or modify
+% it under the terms of the GNU General Public License as published by
+% the Free Software Foundation; either version 2 of the License, or
+% (at your option) any later version.
+%
+% This program is distributed in the hope that it will be useful,
+% but WITHOUT ANY WARRANTY; without even the implied warranty of
+% MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+% GNU General Public License for more details.
+%
+% You should have received a copy of the GNU General Public License along
+% with this program; if not, write to the Free Software Foundation, Inc.,
+% 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
+\todo[inline]{unit of energy?}
+\begin{tikzpicture}
+  \begin{groupplot}[group style={group size=2 by 1,horizontal sep=2cm},width=7cm]
+  \nextgroupplot[
+    axis y line=none,
+    axis x line=bottom,
+    ymax=10000,
+    ymin=-8000,
+    xlabel={Time (ms)},
+    title={Time domain},
+    xtick={0, 0.1, 0.2, 0.3}
+  ]
+  \addplot[blue] table {data/samples.txt};
+  \node[draw, rectangle, fit={(axis cs:0.065,9000)(axis cs:0.090,-7000)},ultra thick] (window) {};
+   
+  \nextgroupplot[
+    xmin=0,
+    xmax=8000,
+    title={Frequency domain},
+    xlabel={Frequency (Hz)},
+    ylabel={Energy}
+  ]
+  \addplot[blue] table[y=energy] {data/spectrum.txt};
+  \addplot[red,very thick,dashed] table[y=envelope] {data/spectrum.txt};
+  \end{groupplot}
+  
+  \draw[->,ultra thick] (window.north) -- +(0,1) -| ([xshift=0.7cm,yshift=0.1cm] group c2r1.north west);
+\end{tikzpicture}

@@ -36,6 +36,7 @@
 \usepackage{siunitx}
 \usepackage{todonotes}
 
+\usepackage{neuralnetwork}
 \usepackage{lipsum}
 
 % -- bibliography settings
@@ -61,10 +62,13 @@
 
 % -- options
 \pgfplotsset{compat=newest}
+\usetikzlibrary{positioning,fit}
+\usepgfplotslibrary{groupplots}
 % make todo notes appear in the inner margin
 \reversemarginpar
 
 % -- custom commands
+\include{macros}
 % bold matrix
 \newcommand{\mat}[1]{\mathbf{#1}}
 

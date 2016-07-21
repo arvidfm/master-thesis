@@ -55,6 +55,13 @@ The DFT can be calculated in $O(N \log N)$ asymptotic time using the fast Fourie
 
 \todo[inline]{sources for the paragraph below}
 
+\begin{figure}
+  \begin{center}
+    \include{figures/stft}
+  \end{center}
+  \caption{\label{fig:sftf}Short-time Fourier transform}
+\end{figure}
+
 The DFT makes certain assumptions regarding the nature of the signal.
 In particular, it assumes that the signal is periodic, which is emphatically not true in general for speech signals.
 However, a speech signal can be thought to be \emph{approximately periodic} over a very short time period.
@@ -68,6 +75,14 @@ There are several problems with working directly with the output of the STFT. On
 Unless very large amounts of data is available, this causes data sparsity issues, which can cause many kinds of models to underperform.
 Additionally, we are not really interested in the exact energy at every frequency step, but 
 rather the overall shape of the spectrum.
+
+\begin{figure}
+  \begin{center}
+    \include{figures/mel-filterbank}
+  \end{center}
+  \caption{\label{fig:filterbank} Filter bank}
+\end{figure}
+
 
 Finally, all frequencies are not created equal, as the human ear does not discriminate between higher frequencies to the same extent as between lower frequencies.
 To model this phonemenon, scales in which a change in pitch corresponds roughly linearly to the subjective change in pitch perceived by a human have been empirically developed.
@@ -273,6 +288,13 @@ This model is known as \emph{linear regression}, or multivariate linear regressi
 The model defines an $n$-dimensional hyperplane for each $y_j$, independently of the other output variables.
 $y_j$ increases linearly along a steepest direction given by $\frac{\partial y_j}{\partial \mat x} = (w_{1j}, w_{2j}, \dots, w_{nj})$.
 
+\begin{figure}
+  \begin{center}
+    \include{figures/perceptron}
+  \end{center}
+  \caption{\label{fig:perceptron}Perceptron}
+\end{figure}
+
 A graphical illustration of the model is provided in \cref{fig:perceptron}.
 We consider the model to be composed of two ``layers'': the input layer, $\mat x$, and the output layer, $\mat y$.
 Each layer is additionally composed of ``units'', corresponding to the individual scalar variables $x_1,\dots,x_n,y_1,\dots,y_m$.
@@ -289,6 +311,14 @@ The logistic function constrains the output to the range of $(0,1)$, allowing $y
 
 \subsection{Stacked linear models}
 
+\begin{figure}[p]
+  \begin{center}
+    \include{figures/separability}
+  \end{center}
+  \caption{\label{fig:separability}Separability}
+\end{figure}
+
+
 While the generalized model is powerful in its own right, it has fatal drawbacks for certain types of data.
 Consider the case of a one-dimensional output $y$ given by $y = g(\mat x \cdot \mat w + b)$, where $\mat w$ is a weight vector.
 Let $\mat v$ be a vector orthogonal to $\mat w$, so that $\mat v \cdot \mat w = 0$.
@@ -302,12 +332,19 @@ This is done by inserting a new layer, called a ``hidden'' layer, between the in
 Let $\mat y^0 = \mat x$ be the input layer, $\mat y^1$ the hidden layer, and $y^2 = y$ the output layer.
 We let
 \begin{align*}
- y^1_1 &= \varphi(y^0_1) \\
- y^1_2 &= \varphi(y^0_2) \\
- y^2 &= y^1_1 + y^1_2 - 1
+ y^1_1 &= 2\varphi(y^0_1) - 1 \\
+ y^1_2 &= 2\varphi(y^0_2) - 1 \\
+ y^2 &= 0.5y^1_1 + 0.5y^1_2 - 0.1
 \end{align*}
-where $\varphi(x) = \exp(-x^2)$ is a Gaussian function.
+where $\varphi(x) = \exp(-x^2)$.
 As can be seen in \cref{fig:stacked-gaussian}, this allows us to solve our classification problem.
+
+\begin{figure}
+  \begin{center}
+    \include{figures/feedforward}
+  \end{center}
+  \caption{\label{fig:feedforward}Feedforward network}
+\end{figure}
 
 In general, our stacked model can be defined as
 \begin{align*}
@@ -315,17 +352,17 @@ In general, our stacked model can be defined as
  \mat y^l &= g^l(\mat y^{l-1} \mat W^l + \mat b^l) \quad l \in [1, N] \\
  \mat y &= \mat y^N
 \end{align*}
-where $N$ is the number of hidden or output layers, and $g^l$, $\mat W^l \in \mathbb{R}^{n^{l-1} \times n^l}$, $\mat b^l \in \mathbb{R}^{1 \times n^l}$ and $n^l$ are the activation function, weight matrix, bias vector and layer size corresponding to layer $l$, respectively.
+where $N$ is the number of hidden or output layers, and $g^l$, $\mat W^l \in \mathbb{R}^{n^{l-1} \times n^l}$, $\mat b^l \in \mathbb{R}^{1 \times n^l}$ and $n^l$ are the activation function, weight matrix, bias vector and layer size (in number of units) corresponding to layer $l$, respectively.
 This is known as a \emph{feedforward artificial neural network}; see \cref{fig:feedforward} for a graphical representation.
 By setting
 \begin{align*}
-g^1(\mat z)_i &= \varphi(z_i) &
+g^1(\mat z)_i &= 2\varphi(z_i) - 1 &
 \mat W^1 &= \left(\begin{matrix}1 & 0 \\ 0 & 1\end{matrix}\right) &
 \mat b^1 &= \mat 0 \\
 %
 g^2(z) &= z &
-\mat W^2 &= \left(\begin{matrix}1 \\ 1\end{matrix}\right) &
-b^2 &= -1 \\
+\mat W^2 &= \left(\begin{matrix}0.5 \\ 0.5\end{matrix}\right) &
+b^2 &= -0.1 \\
 \end{align*}
 with $N = 2$, we obtain the previous example.
 
