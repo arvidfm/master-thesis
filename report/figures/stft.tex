@@ -22,7 +22,7 @@
     axis x line=bottom,
     ymax=10000,
     ymin=-8000,
-    xlabel={Time (ms)},
+    xlabel={Time (\si{\s})},
     title={Time domain},
     xtick={0, 0.1, 0.2, 0.3}
   ]
@@ -33,7 +33,7 @@
     xmin=0,
     xmax=8000,
     title={Frequency domain},
-    xlabel={Frequency (Hz)},
+    xlabel={Frequency (\si{\Hz})},
     ylabel={Energy}
   ]
   \addplot[blue] table[y=energy] {data/spectrum.txt};

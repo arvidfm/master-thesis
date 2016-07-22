@@ -32,3 +32,7 @@
 }
 
 \newcommand{\sumlabel}[2]{$\Sigma$}
+
+% add subcaptions to group plots
+\newcommand{\groupcaption}[3][]{%
+  \node[anchor=north,align=center,text width=1cm,#1] at (#2.south) {\subcaption{#3}}}

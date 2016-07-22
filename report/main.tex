@@ -21,6 +21,8 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{amsfonts}
+\usepackage{caption}
+\usepackage[subrefformat=parens]{subcaption}
 \usepackage{graphicx}
 \usepackage{tikz}
 \usepackage{pgfplots}
@@ -60,17 +62,23 @@
 \addbibresource{../../../papers/citations.bib}
 \addbibresource{../../../papers/linguistics.bib}
 
-% -- options
-\pgfplotsset{compat=newest}
-\usetikzlibrary{positioning,fit}
-\usepgfplotslibrary{groupplots}
-% make todo notes appear in the inner margin
-\reversemarginpar
 
 % -- custom commands
 \include{macros}
 % bold matrix
 \newcommand{\mat}[1]{\mathbf{#1}}
+
+% -- options
+\pgfplotsset{
+  compat=newest,
+  wide/.style={width=12cm,height=5cm}
+}
+\usetikzlibrary{positioning,fit}
+\usepgfplotslibrary{groupplots}
+% use en dash for cleveref ranges
+\newcommand{\crefrangeconjunction}{--}
+% make todo notes appear in the inner margin
+\reversemarginpar
 
 % -- title page
 \title{Improving inter-speaker performance in unsupervised phone discovery using speaker identity side information}
@@ -92,10 +100,10 @@
 \tableofcontents
 \mainmatter
 
-\input{01-introduction.tex}
-\input{02-theory.tex}
-\input{03-related-work.tex}
-\input{04-methods.tex}
+\include{01-introduction}
+\include{02-theory}
+\include{03-related-work}
+\include{04-methods}
 
 \newrefcontext[sorting=nyt] % sort by name in the bibliography
 \printbibliography[heading=bibintoc] % include bibliography in table of contents

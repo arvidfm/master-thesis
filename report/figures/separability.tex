@@ -16,7 +16,7 @@
 
 \begin{tikzpicture}
   \begin{groupplot}[
-    group style={group size=3 by 2},
+    group style={group size=3 by 2,vertical sep=2.2cm},
     xmin=-3,xmax=3,ymin=-3,ymax=3,
     width=6cm,height=6cm,
     xtick=\empty,ytick=\empty,
@@ -58,11 +58,18 @@
    \addplot+[only marks] table[x=bx,y=by] {data/circle_data.txt};
    \addplot3[surface] {2 * exp(-y^2) - 1};
    
-   \nextgroupplot[title={$y = 0.5y^1_1 + 0.5y^1_2 - 0.1$}]
+   \nextgroupplot[title={$y = y^1_1 + y^1_2 - 0.5$}]
    \addplot+[only marks] table[x=ax,y=ay] {data/circle_data.txt};
    \addplot+[only marks] table[x=bx,y=by] {data/circle_data.txt};
-   \addplot3[surface,samples=50] {exp(-x^2) + exp(-y^2) - 1.1};
+   \addplot3[surface,samples=50] {2 * exp(-x^2) + 2 * exp(-y^2) - 2 - 0.5};
    %\addplot[boundary,domain=-1.517:1.517] {sqrt(-ln(1.1-exp(-x^2)))};
    %\addplot[boundary,domain=-1.517:1.517] {-sqrt(-ln(1.1-exp(-x^2)))};
   \end{groupplot}
+  
+  \groupcaption{group c1r1}{\label{fig:sep-linear}};
+  \groupcaption{group c2r1}{\label{fig:sep-tanh}};
+  \groupcaption{group c3r1}{\label{fig:sep-gaussian}};
+  \groupcaption{group c1r2}{\label{fig:sep-hidden1}};
+  \groupcaption{group c2r2}{\label{fig:sep-hidden2}};
+  \groupcaption{group c3r2}{\label{fig:sep-nonlinear}};
 \end{tikzpicture}

@@ -38,11 +38,10 @@ The resulting sampled signal $x[n]\; (n \in \mathbb{Z})$ is a discrete-time appr
 
 \subsection{Short-time Fourier transform}
 
-\todo[inline]{include a figure showing the transition from time to frequency domain}
 \todo[inline]{maybe mention window functions?}
 \todo[inline]{something about the Nyquist frequency}
 
-To mirror how humans percieve audio signals it is useful to transfer the signal to some form that better captures the fluctuations of the signal.
+To mirror how humans perceive audio signals it is useful to transfer the signal to some form that better captures the fluctuations of the signal.
 One way is to analyse the \emph{frequency content} of the signal using the Fourier transform.
 The Fourier transform approximates the signal using a sum of sine and cosine waves of different frequencies, giving the amplitude of each such wave, which in turn can be interpreted as the energy content of the signal at the corresponding frequency.
 In particular, the discrete Fourier transform (DFT), defined as
@@ -56,16 +55,17 @@ The DFT can be calculated in $O(N \log N)$ asymptotic time using the fast Fourie
 \todo[inline]{sources for the paragraph below}
 
 \begin{figure}
-  \begin{center}
-    \include{figures/stft}
-  \end{center}
-  \caption{\label{fig:sftf}Short-time Fourier transform}
+  \centering
+  \input{figures/stft}
+  \caption{\label{fig:sftf}Example of running a short-time Fourier transform on a \SI{25}{\ms} section of a recording of the word ``bed''.
+  The dashed line shows the ``envelope'', or overall shape, of the energy spectrum.
+  The peaks and valleys of the spectrum are characteristic of sonorant sounds such as vowels.}
 \end{figure}
 
 The DFT makes certain assumptions regarding the nature of the signal.
 In particular, it assumes that the signal is periodic, which is emphatically not true in general for speech signals.
 However, a speech signal can be thought to be \emph{approximately periodic} over a very short time period.
-This gives rise to the so-called short-time Fourier transform (STFT), where the DFT is calculated repeatedly on short sections of the signal using a sliding window.
+This gives rise to the so-called short-time Fourier transform (STFT), where the DFT is calculated repeatedly on short sections of the signal using a sliding window; see \cref{fig:sftf} for an example.
 A typical window length is \SI{25}{\ms}, and it is generally shifted forward about \SI{10}{\ms} between each DFT calculation.
 The result of the STFT is the 2D Fourier transform $X(m,k)$ over time step $m$ and frequency $k$, with corresponding energy density $S(m,k) = \left|X(k,m)\right|^2$.
 
@@ -77,12 +77,18 @@ Additionally, we are not really interested in the exact energy at every frequenc
 rather the overall shape of the spectrum.
 
 \begin{figure}
-  \begin{center}
-    \include{figures/mel-filterbank}
-  \end{center}
-  \caption{\label{fig:filterbank} Filter bank}
+  \centering
+  \input{figures/mel-scale}
+  \caption{\label{fig:melscale}The mel scale as it corresponds to the standard frequency scale.
+  Higher frequencies are closer together on the mel scale than lower frequencies.}
 \end{figure}
 
+\begin{figure}
+  \centering
+  \input{figures/mel-filterbank}
+  \caption{\label{fig:filterbank}20 triangular filters spaced linearly along the mel scale from \SIrange{0}{8000}{\Hz}.
+  The peaks of the filters are scaled as to ensure constant area.}
+\end{figure}
 
 Finally, all frequencies are not created equal, as the human ear does not discriminate between higher frequencies to the same extent as between lower frequencies.
 To model this phonemenon, scales in which a change in pitch corresponds roughly linearly to the subjective change in pitch perceived by a human have been empirically developed.
@@ -92,14 +98,14 @@ A frequency $f$ can be converted to the mel scale through the following relation
   \mathrm{mel}(f) = 1127\log\left(1 + \frac{f}{700}\right)
 \]
 where $\log$ is the natural logarithm.
-As can be seen in \cref{fig:mel-scale}, as $f$ grows larger, the difference $\mathrm{mel}(f+\varepsilon) - \mathrm{mel}(f)$ becomes smaller.
+As can be seen in \cref{fig:melscale}, as $f$ grows larger, the difference $\mathrm{mel}(f+\varepsilon) - \mathrm{mel}(f)$ becomes smaller.
 
 Addressing both the issues of dimensionality and perception, we construct the mel-scale filter bank.
 The filter bank is a set of $L$ triangular filters, with the middle points of the filters spaced linearly on the mel scale.
 In other words, if $f_1, f_2, \dots, f_L$ are the middle points of the filters specified in \si{\Hz}, $\mathrm{mel}(f_k) - \mathrm{mel}(f_{k-1}) = \mathrm{mel}(f_{k+1}) - \mathrm{mel}(f_k)$, $k \in [2, L-1]$.
 The start and end points of the filters are the middle points of the previous and following filters, respectively, with the exception of the first filter whose start point is specified by a lower bound $f_{low}$, and the last filter whose end point is given by a higher bound $f_{high}$.
 The height of the peak of each filter can vary; common approaches are to ensure that the filters have either constant height or constant area.
-An illustration of a filter bank is given in \cref{fig:filter-bank}.
+An illustration of a filter bank is given in \cref{fig:filterbank}.
 Each filter is applied to the energy spectrum of the audio signal, giving the filter bank output $E(m,l) = \sum_{k=0}^{N-1}V_l(k)S(m,k)$, where $V_l(k)$ is the $(l+1)$th mel-scale filter.
 The resulting $L$ values at each time step $m$ form a rough approximation of the energy spectrum, with the resolution being higher for low frequencies than for high frequencies.
 $L$ is commonly chosen to be in the \numrange{20}{40} range, significantly lowering the dimensionality of the data.
@@ -289,10 +295,11 @@ The model defines an $n$-dimensional hyperplane for each $y_j$, independently of
 $y_j$ increases linearly along a steepest direction given by $\frac{\partial y_j}{\partial \mat x} = (w_{1j}, w_{2j}, \dots, w_{nj})$.
 
 \begin{figure}
-  \begin{center}
-    \include{figures/perceptron}
-  \end{center}
-  \caption{\label{fig:perceptron}Perceptron}
+  \centering
+  \input{figures/perceptron}
+  \caption{\label{fig:perceptron}A simple linear model consisting of two layers.
+  Each unit in the input layer corresponds to an input variable.
+  Each output unit calculates a weighted sum of the input units.}
 \end{figure}
 
 A graphical illustration of the model is provided in \cref{fig:perceptron}.
@@ -312,20 +319,27 @@ The logistic function constrains the output to the range of $(0,1)$, allowing $y
 \subsection{Stacked linear models}
 
 \begin{figure}[p]
-  \begin{center}
-    \include{figures/separability}
-  \end{center}
-  \caption{\label{fig:separability}Separability}
+  \centering
+  \input{figures/separability}
+  \caption{\label{fig:separability}A classic classification problem.
+  Using our model we wish to correctly classify the blue and red data points.
+  We take the output of our model to mean blue if it is positive, and red otherwise.
+  \subref{fig:sep-linear} The model defines a plane in three-dimensional space.
+  The model can only influence the direction, slant and position of the plane.
+  \subref{fig:sep-tanh} A squashing function limits the range of the output to \numrange{-1}{1}.
+  \subref{fig:sep-gaussian} Using a non-monotonic activation function (here the Gaussian function $\smash{\varphi(x) = \exp(-x^2)}$) it is possible to achieve more than one decision boundary, though all decision boundaries will be linear and parallel.
+  However, by inserting an extra ``hidden'' layer between the input and output layers, the decision boundary can be made more complex.
+  \subref{fig:sep-hidden1}--\subref{fig:sep-hidden2} The output of the units in the hidden layer.
+  \subref{fig:sep-nonlinear} Using a linear combination of the hidden units, the resulting decision boundary perfectly separates the two classes.}
 \end{figure}
-
 
 While the generalized model is powerful in its own right, it has fatal drawbacks for certain types of data.
 Consider the case of a one-dimensional output $y$ given by $y = g(\mat x \cdot \mat w + b)$, where $\mat w$ is a weight vector.
 Let $\mat v$ be a vector orthogonal to $\mat w$, so that $\mat v \cdot \mat w = 0$.
 We can now see that $y = g((\mat x + \mat v) \cdot \mat w + b) = g(\mat x \cdot \mat w + \mat v \cdot \mat w + b) = g(\mat x \cdot \mat w + b)$.
 In other words, \textbf{linear models can only discriminate between data points along the axis defined by the weight vector}.
-When using monotonically increasing activation functions such as the logistic function, this is referred to as the model only being able to classify \emph{linearly seperable} data, as the resulting decision boundary is linear.
-The problem is illustrated in \cref{fig:linear-discriminability}.
+As a result of this, the model's decision boundaries will all be linear and parallel, meaning that it will only be able to classify data that is \emph{linearly seperable}.
+The problem is illustrated in \crefrange{fig:sep-linear}{fig:sep-gaussian}.
 
 However, we can extend our model to enable it to handle more complex data, by stacking several linear models on top of each other.
 This is done by inserting a new layer, called a ``hidden'' layer, between the input and output layers.
@@ -334,16 +348,16 @@ We let
 \begin{align*}
  y^1_1 &= 2\varphi(y^0_1) - 1 \\
  y^1_2 &= 2\varphi(y^0_2) - 1 \\
- y^2 &= 0.5y^1_1 + 0.5y^1_2 - 0.1
+ y^2 &= y^1_1 + y^1_2 - 0.5
 \end{align*}
 where $\varphi(x) = \exp(-x^2)$.
-As can be seen in \cref{fig:stacked-gaussian}, this allows us to solve our classification problem.
+As can be seen in \crefrange{fig:sep-hidden1}{fig:sep-nonlinear}, this allows us to solve our classification problem.
 
 \begin{figure}
-  \begin{center}
-    \include{figures/feedforward}
-  \end{center}
-  \caption{\label{fig:feedforward}Feedforward network}
+  \centering
+  \input{figures/feedforward}
+  \caption{\label{fig:feedforward}A feedforward neural network with two hidden layers.
+  As the data is moved through the hidden layers it is gradually transformed into a representation that hopefully enables the problem to be solved by the final linear model.}
 \end{figure}
 
 In general, our stacked model can be defined as
@@ -361,8 +375,8 @@ g^1(\mat z)_i &= 2\varphi(z_i) - 1 &
 \mat b^1 &= \mat 0 \\
 %
 g^2(z) &= z &
-\mat W^2 &= \left(\begin{matrix}0.5 \\ 0.5\end{matrix}\right) &
-b^2 &= -0.1 \\
+\mat W^2 &= \left(\begin{matrix}1 \\ 1\end{matrix}\right) &
+b^2 &= -0.5 \\
 \end{align*}
 with $N = 2$, we obtain the previous example.
 
