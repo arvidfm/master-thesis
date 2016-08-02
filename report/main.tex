@@ -22,12 +22,13 @@
 \usepackage{amssymb}
 \usepackage{amsfonts}
 \usepackage{caption}
-\usepackage[subrefformat=parens]{subcaption}
+\usepackage[labelformat=simple]{subcaption}
 \usepackage{graphicx}
 \usepackage{tikz}
 \usepackage{pgfplots}
 %\usepackage{pgfplotstable}
 %\usepackage{threeparttable}
+\usepackage{fp}
 \usepackage{booktabs}
 %\usepackage{subcaption}
 \usepackage{hyperref}
@@ -71,14 +72,24 @@
 % -- options
 \pgfplotsset{
   compat=newest,
-  wide/.style={width=12cm,height=5cm}
+  every axis/.style={
+    ylabel style={overlay},
+    yticklabel style={overlay},
+    %xlabel style={overlay},
+    xticklabel style={overlay},
+    scale only axis
+  },
+  wide/.style={width=10cm,height=3cm}
 }
 \usetikzlibrary{positioning,fit}
 \usepgfplotslibrary{groupplots}
-% use en dash for cleveref ranges
-\newcommand{\crefrangeconjunction}{--}
+% modify cref ranges for use with subfigures
+\Crefrangeformat{figure}{Figures~\subfigrange{#1}{#2}{#3}{#4}{#5}{#6}}
+\crefrangeformat{figure}{Figures~\subfigrange{#1}{#2}{#3}{#4}{#5}{#6}}
 % make todo notes appear in the inner margin
 \reversemarginpar
+% use parentheses for subfigure references, e.g. 2.1(b)
+\renewcommand\thesubfigure{(\alph{subfigure})}
 
 % -- title page
 \title{Improving inter-speaker performance in unsupervised phone discovery using speaker identity side information}

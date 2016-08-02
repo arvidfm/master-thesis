@@ -36,3 +36,21 @@
 % add subcaptions to group plots
 \newcommand{\groupcaption}[3][]{%
   \node[anchor=north,align=center,text width=1cm,#1] at (#2.south) {\subcaption{#3}}}
+
+% converts cleveref references like 2.6(a)--2.6(c) to 2.6(a)--(c)
+% will break references like 2.6--2.8
+% requires xstring and fp
+\newcommand\subfigrange[6]{%
+  % get first differing character
+  \StrCompare{#1}{#2}[\pos]%
+  % get last common character (not including opening parenthesis)
+  \FPeval\result{clip(\pos - 2)}%
+  % get common substring
+  \StrLeft{#1}{\result}[\common]%
+  % get first subref
+  \StrGobbleLeft{#1}{\result}[\first]%
+  % get second subref
+  \StrGobbleLeft{#2}{\result}[\second]%
+  % print result
+  #3\common\first#4--#5\second#6%
+}
