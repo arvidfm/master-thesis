@@ -32,7 +32,7 @@
 \usepackage{booktabs}
 %\usepackage{subcaption}
 \usepackage{hyperref}
-\usepackage[noabbrev,capitalise]{cleveref}
+\usepackage[noabbrev]{cleveref}
 \usepackage{url}
 %\usepackage{verbatim}
 \usepackage{units}
@@ -48,7 +48,7 @@
     style=authoryear,
     sorting=ynt,
     sortcites=true, % sort grouped citations in main text by year
-    maxcitenames=1, % truncate > 2 names in main text to one name + et al
+    maxcitenames=2, % truncate > 2 names in main text to one name + et al
     maxbibnames=99, % don't truncate names in bibliography
     giveninits=true, % use initials for first and middle names in bibliography
     uniquename=false, % don't disambiguate names in citations by adding e.g. initials
@@ -85,7 +85,7 @@
 \usepgfplotslibrary{groupplots}
 % modify cref ranges for use with subfigures
 \Crefrangeformat{figure}{Figures~\subfigrange{#1}{#2}{#3}{#4}{#5}{#6}}
-\crefrangeformat{figure}{Figures~\subfigrange{#1}{#2}{#3}{#4}{#5}{#6}}
+\crefrangeformat{figure}{figures~\subfigrange{#1}{#2}{#3}{#4}{#5}{#6}}
 % make todo notes appear in the inner margin
 \reversemarginpar
 % use parentheses for subfigure references, e.g. 2.1(b)
