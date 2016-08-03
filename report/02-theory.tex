@@ -152,7 +152,7 @@ We wish to find the coefficients that minimise
 \sum_{k=-n}^n (f(k) - y_k)^2.
 \]
 As the derivative of $f(k)$ at $k=0$ is $f'(0) = b$, we only need to find a solution for $b$.
-Taking the gradient with respect to $b$ and setting it to $0$ we have
+We minimise the error function by taking the gradient with respect to $b$ and setting it to $0$:
 \begin{align*}
   \frac{\partial}{\partial b} \sum_{k=-n}^n (f(k) - y_k)^2 &= 0 \\
   \frac{\partial}{\partial b} \sum_{k=-n}^n (a + bk + ck^2 - y_k)^2 &= 0 \\
