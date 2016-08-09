@@ -58,12 +58,22 @@ class _Section:
 
     def __getitem__(self, key):
         if not isinstance(key, int):
+            key, *tail = key.split("/", 1)
             key = self._group.attrs[key]
+        else:
+            tail = []
+
+        # handle negative indices
         if key < 0:
             key = len(self) + key
 
         name = "_subsection{}".format(key)
-        return Section(self, self._root, self._group[name], None, None)
+        dset = Section(self, self._root, self._group[name], None, None)
+
+        if len(tail) > 0:
+            return dset[tail[0]]
+        else:
+            return dset
 
     def __len__(self):
         return self._group.attrs['_subsections_num']
@@ -135,17 +145,24 @@ class Section(_Section):
             del self._group.attrs['_metadata{}'.format(i)]
 
     @property
+    def _start(self):
+        return self._group.attrs['_start']
+
+    @property
+    def _end(self):
+        return self._group.attrs['_end']
+
+    @property
     def data(self):
-        start, end = self._group.attrs['_start'], self._group.attrs['_end']
-        return self._root.data[start:end]
+        return self._root.data[self._start:self._end]
 
     @property
     def sectiondata(self):
-        start = self._group.attrs['_start']
+        start = self._start
         if len(self) > 0:
-            end = self[0]._group.attrs['_start']
+            end = self[0]._start
         else:
-            end = self._group.attrs['_end']
+            end = self._end
 
         return self._root.data[start:end] if end > start else None
 
@@ -192,8 +209,14 @@ class DataFile:
             self._hfile.copy('{}/_data'.format(source), '{}/_data'.format(dest))
             self._hfile[dest].attrs['_subsections_num'] = 0
 
-    def __getitem__(self, key):
-        return Dataset(self._hfile[key], None, None)
+    def __getitem__(self, path):
+        key, *tail = path.split("/", 1)
+        dset = Dataset(self._hfile[key], None, None)
+
+        if len(tail) > 0:
+            return dset[tail[0]]
+        else:
+            return dset
 
     def __delitem__(self, key):
         del self._hfile[key]
