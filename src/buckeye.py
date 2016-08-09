@@ -24,6 +24,7 @@ import numpy as np
 import scipy.io.wavfile
 import librosa.core
 import librosa.feature
+import click
 
 import dataset
 
@@ -112,13 +113,18 @@ def get_speaker(speaker, section):
     for recording in recordings:
         get_recording(recording, section.create_section(recording.stem))
 
-def get_corpus(corpuspath, outfile):
+def get_corpus(corpuspath, hdf5file, outset):
     speakers = pathlib.Path(corpuspath).glob("s*")
-    dataset = outfile.create_dataset('samples', (), 'i2')
+    dataset = hdf5file.create_dataset(outset, (), 'i2')
     for speaker in speakers:
         get_speaker(speaker, dataset.create_section(speaker.stem))
 
+@click.command()
+@click.argument('hdf5file', type=dataset.HDF5TYPE)
+@click.option('--corpuspath', type=click.Path(exists=True), required=True)
+@click.option('-o', '--outset', default='samples')
+def main(hdf5file, corpuspath, outset):
+    get_corpus(corpuspath, hdf5file, outset)
+
 if __name__ == '__main__':
-    import sys, cProfile
-    f = dataset.DataFile('/NOBACKUP/arvidfm/buckeye')
-    get_corpus(sys.argv[1], f)
+    main()
