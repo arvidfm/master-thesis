@@ -18,9 +18,6 @@
 
 %\usepackage{fontspec} % included by the document class
 \usepackage{csquotes}
-\usepackage{amsmath}
-\usepackage{amssymb}
-\usepackage{amsfonts}
 \usepackage{caption}
 \usepackage[labelformat=simple]{subcaption}
 \usepackage{graphicx}
@@ -30,14 +27,17 @@
 %\usepackage{threeparttable}
 \usepackage{fp}
 \usepackage{booktabs}
-%\usepackage{subcaption}
+\usepackage{subcaption}
 \usepackage{hyperref}
-\usepackage[noabbrev]{cleveref}
 \usepackage{url}
 %\usepackage{verbatim}
 \usepackage{units}
 \usepackage{siunitx}
 \usepackage{todonotes}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsfonts}
+\usepackage[noabbrev]{cleveref}
 
 \usepackage{neuralnetwork}
 \usepackage{lipsum}
@@ -67,7 +67,7 @@
 % -- custom commands
 \include{macros}
 % bold matrix
-\newcommand{\mat}[1]{\mathbf{#1}}
+\newcommand{\mat}[1]{\boldsymbol{\mathbf{#1}}}
 
 % -- options
 \pgfplotsset{
@@ -115,6 +115,8 @@
 \include{02-theory}
 \include{03-related-work}
 \include{04-methods}
+\include{05-experiments}
+\include{06-discussion}
 
 \newrefcontext[sorting=nyt] % sort by name in the bibliography
 \printbibliography[heading=bibintoc] % include bibliography in table of contents
