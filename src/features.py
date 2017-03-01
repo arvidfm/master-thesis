@@ -54,14 +54,10 @@ def extractor_command(dtype=None):
             else:
                 ddtype = np.dtype(dtype)
 
-            try:
-                del hdf5file[outset]
-            except KeyError:
-                pass
-
             extractor, dims = callback(inset=inset, input_dims=inset.dims, **kwargs)
-            outset = hdf5file.create_dataset(outset, dims, ddtype)
-            transform_dataset(extractor, inset, outset)
+            outset = hdf5file.create_dataset(outset, dims, ddtype, overwrite=True)
+            transform_dataset(extractor, inset, outset,
+                              callback=lambda sec, level: level == 1 and print(sec.name))
 
         comm.callback = wrapper
         return comm
@@ -111,19 +107,26 @@ def feature_extractor(parent=None):
         return wrapper
     return decorator
 
+def iterate_data(section, callback, chunk_size=1000):
+    data = section.data
+    for i in range(0, data.shape[0], chunk_size):
+        callback(data[i:i+chunk_size])
 
-def transform_dataset(extractor, inset, outset):
-    def _build_sections(insec, outsec, outer=True):
+
+def transform_dataset(extractor, inset, outset, callback=None):
+    def _build_sections(insec, outsec, level):
         for sec in insec:
-            if outer:
-                print(sec.name)
+            if callback is not None:
+                callback(sec, level)
 
-            data = extractor.send(sec.sectiondata)
+            sectiondata = sec.sectiondata
+            data = extractor.send(sectiondata[:] if sectiondata is not None else None)
             metadata = sec.metadata
             newsec = outsec.create_section(name=sec.name, data=data, metadata=metadata)
-            _build_sections(sec, newsec, outer=False)
+            _build_sections(sec, newsec, level + 1)
 
-    _build_sections(inset, outset)
+    outset.metadata = inset.metadata
+    _build_sections(inset, outset, 1)
 
 
 @feature_extractor()
