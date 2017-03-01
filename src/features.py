@@ -207,7 +207,7 @@ def fbank(*, dims, sample_rate, filters=40, low_frequency=0.0,
                                      low_frequency, high_frequency).T
 
     def extractor(data):
-        return data[:,:dims[0] // 2 + 1] @ filterbank
+        return np.log(data[:,:dims[0] // 2 + 1] @ filterbank)
 
     return extractor, (filters,)
 
@@ -218,7 +218,7 @@ def mfcc(*, mfccs=13, first_order=False, second_order=False, **kwargs):
         return ((x[2:] - x[:-2])[1:-1] + 2*(x[4:] - x[:-4])) / 10
 
     def extractor(data):
-        coeffs = [librosa.feature.mfcc(n_mfcc=mfccs, S=np.log(data).T).T]
+        coeffs = [librosa.feature.mfcc(n_mfcc=mfccs, S=data.T).T]
 
         if first_order or second_order:
             d = deltas(coeffs[0])
