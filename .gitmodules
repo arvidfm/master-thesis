@@ -4,3 +4,6 @@
 [submodule "ZRTools"]
 	path = ZRTools
 	url = https://github.com/arenjansen/ZRTools
+[submodule "bibliography"]
+	path = bibliography
+	url = https://github.com/arvidfm/bibliography
