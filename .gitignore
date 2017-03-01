@@ -4,6 +4,7 @@
 *.blg
 *.log
 *.pdf
+!main.pdf
 *.run.xml
 *.toc
 *.kilepr
