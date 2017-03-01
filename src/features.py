@@ -129,11 +129,38 @@ def transform_dataset(extractor, inset, outset, callback=None):
     _build_sections(inset, outset, 1)
 
 
+def ms_to_samples(sample_rate, duration):
+    assert isinstance(sample_rate, int)
+    return int(sample_rate // 1000 * duration)
+
 @feature_extractor()
-def frame(*, dims, sample_rate=None, window_length=25, window_shift=10, **kwargs):
+def frame(*, dims, sample_rate=None, window_length=25, window_shift=10,
+          feature_axis=-1, new_axis=False, collapse_axes=False, **kwargs):
     if sample_rate is not None:
-        window_length = int(sample_rate / 1000 * window_length)
-        window_shift = int(sample_rate / 1000 * window_shift)
+        window_length = ms_to_samples(sample_rate, window_length)
+        window_shift = ms_to_samples(sample_rate, window_shift)
+    if len(dims) == 0:
+        new_axis = True
+
+    new_shape = np.array([window_length, *dims])
+    # compensate for new axis if positive;
+    # get actual axis index if negative so that axis + 1 isn't 0
+    feature_axis = (feature_axis + 1 if feature_axis >= 0
+                    else len(new_shape) + feature_axis)
+    # get axis indices
+    axes = np.arange(len(new_shape))
+    # move new axis to just before the feature axis
+    transpose = np.hstack((np.roll(axes[:feature_axis], -1), axes[feature_axis:]))
+    # update shape tuple
+    new_shape = tuple(new_shape[transpose])
+
+    # merge new axis and feature axis through multiplication,
+    # but return an empty tuple if 1D (will be merged with the first axis)
+    prod = lambda a: (a[0]*a[1],) if len(a) == 2 else ()
+    if collapse_axes:
+        new_shape = (*new_shape[:feature_axis-1],
+                     *prod(new_shape[feature_axis-1:feature_axis+1]),
+                     *new_shape[feature_axis+1:])
 
     def extractor(data):
         if data.shape[0] < window_length:
@@ -142,11 +169,22 @@ def frame(*, dims, sample_rate=None, window_length=25, window_shift=10, **kwargs
         try:
             indices = librosa.util.frame(
                 np.arange(data.shape[0]), window_length, window_shift).T
-            return data[indices]
         except librosa.ParameterError:
             return None
 
-    return extractor, (window_length, *dims)
+        data = data[indices]
+        # compensate for unspecified first axis
+        fa = feature_axis + 1
+
+        # add first axis to transpose array
+        transp = np.hstack((0, transpose + 1))
+        data = data.transpose(transp)
+
+        if collapse_axes:
+            data = data.reshape((-1, *new_shape))
+        return data
+
+    return extractor, new_shape
 
 @feature_extractor(parent=frame)
 def spectrum(*, dims, fft_bins=512, window_function='hamming', **kwargs):
@@ -244,6 +282,8 @@ def main():
 @click.option('--window-shift', default=10, show_default=True)
 @click.option('--window-length', default=25, show_default=True)
 @click.option('--sample-rate', type=int)
+@click.option('--feature-axis', default=-1, show_default=True)
+@click.option('--collapse-axes', is_flag=True)
 @main.command('frame')
 def frame_comm(**kwargs):
     return frame(**kwargs)
@@ -252,7 +292,7 @@ def frame_comm(**kwargs):
 @click.option('--window-function', default='hamming', show_default=True,
               type=click.Choice(['none', 'hamming', 'hann']))
 @click.option('--fft-bins', default=512, show_default=True)
-@inherit_flags(frame_comm)
+@inherit_flags(frame_comm, exclude={'feature_axis', 'collapse_axes'})
 @main.command('spectrum')
 def spectrum_comm(**kwargs):
     return spectrum(**kwargs)
