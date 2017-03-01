@@ -1,3 +1,6 @@
+[submodule "Zerospeech2015"]
+	path = Zerospeech2015
+	url = https://github.com/bootphon/Zerospeech2015.git
 [submodule "ZRTools"]
 	path = ZRTools
-	url = https://github.com/bootphon/ZRTools
+	url = https://github.com/arenjansen/ZRTools
