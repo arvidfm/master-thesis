@@ -15,3 +15,12 @@ buckeyecorpus
 *.dat
 *.script
 *.table
+*.pkl
+*.txt
+!report/data/*
+*.ipynb
+assignment-description
+schedule
+specification
+report/short-intro*
+*~
