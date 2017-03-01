@@ -18,7 +18,7 @@
 \label{ch:related-work}
 
 This \namecref{ch:related-work} provides a brief overview of recent research into unsupervised acoustic modelling.
-The approaches discussed here can largely be divided into two categories: bottom-up approaches that infer the acoustic model directly from the speech frames, and top-down approaches that first segment the speech into syllable- or word-like units, and afterwards try break these units into smaller subword units.
+The approaches discussed here can broadly be divided into two categories: bottom-up approaches that infer the acoustic model directly from the speech frames, and top-down approaches that first segment the speech into syllable- or word-like units, and afterwards try break these units into smaller subword units.
 
 \section{Bottom-up approaches}
 
@@ -52,6 +52,7 @@ Despite the simple approach, this turned out to be the overall best-performing m
 A siamese network is a feedforward neural network that takes two inputs and adjusts its parameters to either maximise or minimise the similarity of the corresponding outputs \parencite{bromley1994signature}.
 
 \section{Top-down approaches}
+\todo[inline]{remove information already included in the introduction}
 
 Top-down approaches start by first finding pairs of longer word-like segments using unsupervised term discovery (UTD).
 This information provides constraints that can be use to find speech frame representations that are more stable within a given subword unit.
@@ -78,3 +79,21 @@ The network takes a pair of speech frames as input, and adjusts its parameters s
 
 \textcite{kamper2015unsupervised} use an autoencoder-like structure, where a neural network is trained to ``reconstruct'' a frame given another frame known to be of the same type.
 \textcite{renshaw2015comparison} used this architecture in the Zero Resource Speech Challenge, albeit with a deeper decoder.
+
+\section{This thesis}
+\todo[inline]{make description more application agnostic?}
+
+Two of the most successful approaches so far are the clustering approach of \textcite{chen2015} and the siamese network approach of \textcite{thiolliere2015hybrid}.
+We pose the question of whether it is possible to combine the two approaches by first clustering the data in an unsupervised manner using a probabilistic model, and then improving the resulting posteriorgrams using speech fragment information.
+This way we are able to take advantage of both the whole unlabelled data set, and the smaller set of discovered fragments.
+
+Many probabilistic models, such as Gaussian mixture models and hidden Markov models, have a concept of latent states or classes.
+We pose the problem of improving posteriorgrams from such a model as one of merging, or partitioning, these classes.
+By first training the model in a fully unsupervised manner, it learns classes that can generally be assumed to be highly speaker-specific.
+We can then use weak supervision to merge these classes, yielding representations that are more speaker invariant.
+
+A partitioning of classes can be viewed as a surjection from the original set of classes to a class set of lower cardinality, but finding this surjection is a discrete problem which is difficult to optimise for.
+However, a benefit of posteriorgrams is that the probability of an output class can be described as a simple sum of the probabilities of the classes that map to the class in question.
+This means that the surjection can be approximated using a continuous linear model which can be optimised through standard gradient descent.
+A linear model also has the added benefit of being more interpretable than deep networks such as that of \textcite{thiolliere2015hybrid}.
+While the approach of partitioning posteriorgrams is very reminiscent of \textcite{jansen2013weak}, the major difference is that in place of direct clustering of classes, we are instead trying to maximise the similarity/dissimilarity between pairs of speech fragments, which only indirectly results in a partitioning of the classes.
