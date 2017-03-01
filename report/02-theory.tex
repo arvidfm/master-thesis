@@ -15,6 +15,10 @@
 % 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 \chapter{Theory}
+\label{ch:theory}
+
+This \namecref{ch:methods} provides an overview of topics that serve as a base for the rest of the thesis.
+Topics covered include speech recognition, basic concepts in machine learning, and artificial neural networks.
 
 \section{Audio processing for speech recognition}
 
@@ -22,7 +26,7 @@ An important step in most speech recognition applications is feature extraction:
 As the exact types of features used vary depending on the model used and the goal of the application, this section will focus on some particularly common features used in speech recognition.
 Additionally, some standard methods of processing speech that take into consideration the sequential and dynamic nature of speech will be discussed.
 
-This section serves as a superficial introduction to signal processing for speech recognition.
+This section serves as a short introduction to signal processing for speech recognition.
 For a more in-depth description, see a book on signal processing such as \textcite{quatieri2002discrete}, or see \textcite{huang2001spoken} for an introduction to speech recognition in particular.
 
 \subsection{Audio signals}
@@ -45,9 +49,9 @@ To mirror how humans perceive audio signals it is useful to transfer the signal 
 One way is to analyse the \emph{frequency content} of the signal using the Fourier transform.
 The Fourier transform approximates the signal using a sum of sine and cosine waves of different frequencies, giving the amplitude of each such wave, which in turn can be interpreted as the energy content of the signal at the corresponding frequency.
 In particular, the discrete Fourier transform (DFT), defined as
-\[
+\begin{equation}
 X(k) = \sum_{n=0}^{N-1} x[n]e^{-j2\pi kn/N}
-\]
+\end{equation}
 where $j$ is the imaginary unit and $k \in [0, N-1]$ corresponds to the frequency $f = \frac{k}{N}f_s$, gives the frequency content of a finite discrete-time signal of length $N$ samples.
 The energy density, or the energy distribution over frequency, is given by $S(k) = \left|X(k)\right|^2$.
 The DFT can be calculated in $O(N \log N)$ asymptotic time using the fast Fourier transform (FFT) algorithm, especially in the case where $N$ is chosen to be a power of 2 \parencite{cooley1965algorithm}.
@@ -71,10 +75,10 @@ The result of the STFT is the 2D Fourier transform $X(m,k)$ over time step $m$ a
 
 \subsection{Mel-scale filter banks}
 
-There are several problems with working directly with the output of the STFT. One is that the output is too high-dimensional, as $N$ is often chosen to be in the \numrange{512}{2048} range for the DFT.
+There are several problems with working directly with the output of the STFT. One is that the output is very high-dimensional, as $N$ is often chosen to be in the \numrange{512}{2048} range for the DFT.
 Unless very large amounts of data is available, this causes data sparsity issues, which can cause many kinds of models to underperform.
 Additionally, we are not really interested in the exact energy at every frequency step, but 
-rather the overall shape of the spectrum.
+would rather like to extract the overall shape of the spectrum, preferably in a way that also suppresses some of the noise.
 
 \begin{figure}
   \centering
@@ -94,9 +98,9 @@ Finally, all frequencies are not created equal, as the human ear does not discri
 To model this phenomenon, scales in which a change in pitch corresponds roughly linearly to the subjective change in pitch perceived by a human have been empirically developed.
 One such scale, ubiquitous in speech technology, is the mel scale, which was developed through experiments where participants were told to produce a tone with half the perceived pitch of a reference tone \parencite{stevens1937scale}.
 A frequency $f$ can be converted to the mel scale through the following relation:
-\[
+\begin{equation}
   \mathrm{mel}(f) = 1127\log\left(1 + \frac{f}{700}\right)
-\]
+\end{equation}
 where $\log$ is the natural logarithm.
 As can be seen in \cref{fig:melscale}, as $f$ grows larger, the difference $\mathrm{mel}(f+\varepsilon) - \mathrm{mel}(f)$ becomes smaller.
 
@@ -106,7 +110,7 @@ In other words, if $f_1, f_2, \dots, f_L$ are the middle points of the filters s
 The start and end points of the filters are the middle points of the previous and following filters, respectively, with the exception of the first filter whose start point is specified by a lower bound $f_{low}$, and the last filter whose end point is given by a higher bound $f_{high}$.
 The height of the peak of each filter can vary; common approaches are to ensure that the filters have either constant height or constant area.
 An illustration of a filter bank is given in \cref{fig:filterbank}.
-Each filter is applied to the energy spectrum of the audio signal, giving the filter bank output $E(m,l) = \sum_{k=0}^{N-1}V_l(k)S(m,k)$, where $V_l(k)$ is the $(l+1)$th mel-scale filter.
+Each filter is applied to the energy spectrum of the audio signal, giving the filter bank output $E(m,l) = \sum_{k=0}^{N-1}V_l(k)S(m,k)$, where $V_l(k)$ is the value of the $(l+1)$th mel-scale filter at frequency $k$.
 The resulting $L$ values at each time step $m$ form a rough approximation of the energy spectrum, with the resolution being higher for low frequencies than for high frequencies.
 $L$ is commonly chosen to be in the \numrange{20}{40} range, significantly lowering the dimensionality of the data.
 
@@ -117,9 +121,9 @@ For instance, this is the case when modelling the features using multivariate Ga
 
 Unfortunately, the mel-scale filter bank outputs are \emph{not} decorrelated, as neighbouring frequencies tend to take on similar values in the energy spectrum.
 However, they can be made roughly decorrelated by taking the discrete cosine transform (DCT) of the logarithm of the filter bank outputs, given as
-\[
+\begin{equation}
 C(m,c) = \sum_{l=0}^{L-1} \log(E(m,l)) \cos\left[\frac{2\pi}{L}\left(l+\frac{1}{2}\right)c\right]
-\]
+\end{equation}
 for $c \in [0, L - 1]$.
 The DCT approximates the input using cosine waves in a similar manner to how the Fourier transform works, with each coefficient $c$ indicating how similar the input is to the cosine wave with frequency $c/L$\todo{true?}.
 
@@ -148,36 +152,35 @@ We do this by approximating the feature vector sequence using a second-order pol
 Let $y_{-n}, \dots, y_{-1}, y_0, y_1, \dots, y_n$ be a sequence of feature values (e.g.\ the values corresponding to a single MFCC), where we are interested in the temporal derivative at the point corresponding to $y_0$, i.e.\ at $k=0$.
 $n$ is the number of points at each side of $y_0$ that we want to use to estimate the polynomial.
 We wish to find the coefficients that minimise
-\[
+\begin{equation}
 \sum_{k=-n}^n (f(k) - y_k)^2.
-\]
+\end{equation}
 As the derivative of $f(k)$ at $k=0$ is $f'(0) = b$, we only need to find a solution for $b$.
 We minimise the error function by taking the gradient with respect to $b$ and setting it to $0$:
-\begin{align*}
+\begin{align}
   \frac{\partial}{\partial b} \sum_{k=-n}^n (f(k) - y_k)^2 &= 0 \\
   \frac{\partial}{\partial b} \sum_{k=-n}^n (a + bk + ck^2 - y_k)^2 &= 0 \\
   \sum_{k=-n}^n 2k(a + bk + ck^2 - y_k) &= 0 \\
   \sum_{k=-n}^n ak + \sum_{k=-n}^n bk^2 + \sum_{k=-n}^n ck^3 &= \sum_{k=-n}^n ky_k.
-\end{align*}
-By antisymmetry we find that $\sum_{k=-n}^n ak = \sum_{k=-n}^n ck^3 = 0$, leaving us with
-\begin{align*}
+\end{align}
+By antisymmetry we see that $\sum_{k=-n}^n ak = \sum_{k=-n}^n ck^3 = 0$, leaving us with
+\begin{align}
   \sum_{k=-n}^n bk^2 &= \sum_{k=-n}^n ky_k \\
   b &= \frac{\sum_{k=-n}^n ky_k}{\sum_{k=-n}^n k^2} \\
   f'(0) &= \frac{\sum_{k=1}^n k(y_k - y_{-k})}{2\sum_{k=1}^n k^2}.
-\end{align*}
+\end{align}
 Thus, in general, to approximate the first-order temporal derivative at a point in time $t$, also known as the \emph{delta} value at $t$, we have
-\[
+\begin{equation}
 \Delta y_t \approx \frac{\sum_{k=1}^n k(y_{t+k} - y_{t-k})}{2 \sum_{k=1}^n k^2}
-\]
+\end{equation}
 which is the formula used by toolkits such as HTK \parencite{young2005htk}.
 The second-order derivative, or the \emph{delta-delta} values, can be obtained by repeating the process using the delta values.
 
 \subsection{Dynamic time warping}
 
-Speech is also inherently dynamic.
-A single speaker if asked to repeat a word two times will not pronounce the word exactly the same both times, and the length of the utterances will also differ slightly.
-As a result of this, direct comparison of two utterances in order to measure their similarity becomes difficult.
-Dynamic time warping (DTW) attempts to solve this problem by finding the best alignment of the frames of the two utterances and measure the similarity based on this alignment.
+Rather than training a model to perform speech recognition, it is sometimes of interest to directly measure the similarity of two utterances.
+However, the dynamic nature of speech makes this difficult: A single speaker if asked to repeat a word two times will not pronounce the word exactly the same both times, and the length of the utterances will also differ slightly.
+Dynamic time warping (DTW) attempts to deal with this by finding the best alignment of the frames of the two utterances and measure the similarity based on this alignment.
 
 Let $d(\mat x, \mat y)$ be some local measure of the distance between the feature vectors $\mat x$ and $\mat y$ (e.g.\ the Euclidean distance) so that $d(\mat x, \mat y)$ is larger the further apart the feature vectors are.
 Let $\mat X = \{\mat x_1, \mat x_2, \dots, \mat x_n\}$ and $\mat Y = \{\mat y_1, \mat y_2, \dots, \mat y_m\}$ be sequences of feature vectors, and let $\mat X_{k:l}$ denote the subsequence of $\mat X$ starting at $k$ and ending at $l$. 
@@ -185,16 +188,16 @@ We wish to find a global distance measure $D(\mat X, \mat Y)$ as a sum of the lo
 All elements in both sequences must be used in the final alignment, but elements may be repeated at will to serve as padding.
 
 This can be expressed through the recurrence
-\begin{align*}
-D(\mat X_{1:k}, \mat Y_{1:l}) = d(\mat x_k, \mat y_l) + \min(&D(\mat X_{1:k-1}, \mat Y_{1:l-1}), \\
-& D(\mat X_{1:k-1}, \mat Y_{1:l}), \\
+\begin{align}
+D(\mat X_{1:k}, \mat Y_{1:l}) = d(\mat x_k, \mat y_l) + \min(&D(\mat X_{1:k-1}, \mat Y_{1:l-1}), \nonumber \\
+& D(\mat X_{1:k-1}, \mat Y_{1:l}), \nonumber \\
 & D(\mat X_{1:k}, \mat Y_{1:l-1}))
-\end{align*}
+\end{align}
 with the base cases
-\begin{align*}
+\begin{align}
   D(\mat X_{1:0}, \mat Y_{1:0}) &= 0 \\
   D(\mat X_{1:0}, \mat Y_{1:k}) = D(\mat X_{1:k}, \mat Y_{1:0}) &= \infty.
-\end{align*}
+\end{align}
 Padding with $\infty$ is required to ensure that the alignment starts with the first element in both sequences.
 
 The way the recurrence is defined enables evaluation of $D(\mat X, \mat Y)$ in $O(nm)$ time using dynamic programming.
@@ -202,7 +205,7 @@ By saving backpointers during the calculation, it is also possible to retrieve t
 
 \section{Machine learning}
 
-Machine learning is the practice of automatically finding patterns in data, and use these patterns to make future predictions or perform decision making.
+Machine learning can roughly be described as the practice of automatically finding patterns in data, and using these patterns to make future predictions or perform decision making.
 The learning process generally takes the form of setting up an appropriate mathematical or statistical model, and automatically changing the parameters of the model to fit the data.
 Machine learning is commonly employed in a variety of fields such as speech recognition, computer vision and natural language processing (NLP).
 
@@ -256,8 +259,8 @@ One example of clustering is the grouping of speech frames generated from an aud
 
 \subsubsection{Embedding}
 
-In some cases we do not have access to the true class corresponding to a data point, but we \emph{do} have information on whether two given data points belong to the same class or not.
-Using this information we wish to project the data into a new space where points belonging to the same class are close, while points belonging to different classes are distant.
+In some cases we do not have access to the true class corresponding to a data point, but we \emph{do} have information such as whether two given data points belong to the same class or not, or what context the data points appear in.
+Using this information we wish to project the data onto a new space where similar data points are close, while dissimilar points are distant.
 This projection is referred to as an embedding, and the techinque has seen use in areas such as face recognition, where faces are projected onto a space where similarity can be measured more easily, and natural language processing, where words, sentences or even whole documents are converted into real-valued vectors that capture some semantic information.
 
 \subsection{K-means clustering}
@@ -269,30 +272,29 @@ Once the cluster centers converge (i.e.\ stop updating), the training stops.
 
 \subsection{Gaussian mixture models}
 
-\todo[inline]{is $P(k)$ rigorous notation? also the pdf notation}
 While K-means clustering is simple to implement, it also makes some hidden assumptions, such as each cluster being spherical, which make it a bad fit for many types of data.
 A better assumption in many cases is that each data point was generated by one of $K$ multivariate Gaussian distributions, each Gaussian $k$ having mean $\boldsymbol \mu_k$ and covariance matrix $\boldsymbol \Sigma_k$.
-The probability of the $k$th Gaussian generating a data point being $P(k \mid \boldsymbol \theta) = \pi_k$, where $\sum_{k=1}^K \pi_k = 1$.
-The probability of seeing a data point $\mat x$ is then described by the probability density function
-\[
-f(\mat x \mid \boldsymbol \theta) = \sum_{k=1}^K P(k \mid \boldsymbol \theta)f(\mat x \mid k, \boldsymbol \theta) = \sum_{k=1}^K \pi_k \mathcal{N}(\mat x; \boldsymbol \mu_k,\, \boldsymbol \Sigma_k)
-\]
+We denote the probability of the $k$th Gaussian generating a data point as $p(k \mid \boldsymbol \theta) = \pi_k$, where $\sum_{k=1}^K \pi_k = 1$.
+The probability of seeing a data point $\mat x$ is then described by
+\begin{equation}
+p(\mat x \mid \boldsymbol \theta) = \sum_{k=1}^K p(k \mid \boldsymbol \theta)p(\mat x \mid k, \boldsymbol \theta) = \sum_{k=1}^K \pi_k \mathcal{N}(\mat x; \boldsymbol \mu_k,\, \boldsymbol \Sigma_k)
+\end{equation}
 where $\boldsymbol \theta$ is the parameters of the model:
-\[
+\begin{equation}
  \boldsymbol \theta = \{\pi_1, \pi_2, \dots, \pi_K, \boldsymbol \mu_1, \boldsymbol \mu_2, \dots, \boldsymbol \mu_K, \boldsymbol \Sigma_1, \boldsymbol \Sigma_2, \dots, \boldsymbol \Sigma_K\}.
-\]
+\end{equation}
 
 This is known as a (finite, as the number of components $K$ is set \emph{a priori}) Gaussian mixture model (GMM).
 Clustering using a GMM is performed by initialising the parameters $\boldsymbol \theta$ to some (e.g.\ random) value, and then iteratively updating the parameters using the expectation maximisation (EM) algorithm to maximise the probability of the model having generated the data.
 See \textcite{murphy2012machine} for a detailed description of EM for GMMs.
 
-After training, the posterior distribution $P(k \mid \mat x, \boldsymbol \theta)$ can be calculated as
-\[
-P(k \mid \mat x, \boldsymbol \theta)
-= \frac{P(k \mid \boldsymbol \theta)f(\mat x \mid k, \boldsymbol \theta)}{f(\mat x \mid \boldsymbol \theta)}
-= \frac{P(k \mid \boldsymbol \theta)f(\mat x \mid k, \boldsymbol \theta)}{\sum_{l=1}^K P(l \mid \boldsymbol \theta)f(\mat x \mid l, \boldsymbol \theta)}
+After training, the posterior distribution $p(k \mid \mat x, \boldsymbol \theta)$ can be calculated as
+\begin{equation}
+p(k \mid \mat x, \boldsymbol \theta)
+= \frac{p(k \mid \boldsymbol \theta)p(\mat x \mid k, \boldsymbol \theta)}{p(\mat x \mid \boldsymbol \theta)}
+= \frac{p(k \mid \boldsymbol \theta)p(\mat x \mid k, \boldsymbol \theta)}{\sum_{l=1}^K p(l \mid \boldsymbol \theta)p(\mat x \mid l, \boldsymbol \theta)}
 = \frac{\pi_k \mathcal{N}(\mat x; \boldsymbol \mu_k, \boldsymbol \Sigma_k)}{\sum_{l=1}^K \pi_l \mathcal{N}(\mat x; \boldsymbol \mu_l, \boldsymbol \Sigma_l)},
-\]
+\end{equation}
 giving the probability of $\mat x$ belonging to class $k$.
 
 \section{Artificial neural networks}
@@ -311,11 +313,11 @@ For a recent detailed text on ANNs in the context of deep learning, see \textcit
 
 Consider the problem of predicting $m$ scalar output variables $y_1, y_2, \dots, y_m$ using a weighted linear combination of $n$ input variables $x_1, x_2, \dots, x_n$: $y_j = \sum_{i=1}^n x_i w_{ij} + b_j$.
 In matrix notation we write this as
-\[
+\begin{equation}
  \mat y = \mat x \mat W + \mat b
-\]
+\end{equation}
 where
-\begin{align*}
+\begin{align}
   \mat x &= \left(\begin{matrix}x_1 & x_2 & \cdots & x_n\end{matrix}\right) \\
   \mat W &= \left(\begin{matrix}
     w_{11} & w_{12} & \cdots & w_{1m} \\
@@ -325,10 +327,10 @@ where
   \end{matrix}\right) \\
   \mat b &= \left(\begin{matrix}b_1 & b_2 & \cdots & b_m\end{matrix}\right) \\
   \mat y &= \left(\begin{matrix}y_1 & y_2 & \cdots & y_m\end{matrix}\right).
-\end{align*}
+\end{align}
 
 $\mat W$ is a weight matrix, defining a different weighted combination of input variables for each $y_j$.
-$\mat b$ is a constant term known by a variety of names, including ``bias'', ``threshold'' and ``intercept'', depending on the context.
+$\mat b$ is a constant term variably known as ``bias'', ``threshold'' or ``intercept'', depending on the context.
 The interpretation of the bias is not wholly straightforward, but consider the case where each input variable $x_i$ has zero mean; in this case, $b_j$ represents the mean of $y_j$.
 
 This model is known as \emph{linear regression}, or multivariate linear regression in the case of $m > 1$.
@@ -350,9 +352,9 @@ Every unit in the input layer is connected to every unit in the output layer, ea
 The output units perform a summation of the weighted input variables before adding a bias value, yielding the final output.
 
 Linear regression can be generalised by inserting a so-called ``activation function'' $g$ before outputting the final value:
-\begin{align*}
+\begin{equation}
  \mat y = g(\mat x \mat W + \mat b).
-\end{align*}
+\end{equation}
 
 If $g$ is chosen to be the logistic function $g(\mat z)_j = \sigma(z_j)$, this is known as \emph{logistic regression}.
 The logistic function constrains the output to the range of $(0,1)$, allowing $y_j$ to be interpreted as modelling the Bernoulli distribution $P(j=1 \mid \mat x)$.
@@ -386,11 +388,11 @@ However, we can extend our model to enable it to handle more complex data, by st
 This is done by inserting a new layer, called a ``hidden'' layer, between the input and output layers.
 Let $\mat y^0 = \mat x$ be the input layer, $\mat y^1$ the hidden layer, and $y^2 = y$ the output layer.
 We let
-\begin{align*}
+\begin{align}
  y^1_1 &= 2\varphi(y^0_1) - 1 \\
  y^1_2 &= 2\varphi(y^0_2) - 1 \\
  y^2 &= y^1_1 + y^1_2 - 0.5
-\end{align*}
+\end{align}
 where $\varphi(x) = \exp(-x^2)$.
 As can be seen in \crefrange{fig:sep-hidden1}{fig:sep-nonlinear}, this allows us to solve our classification problem.
 
@@ -402,28 +404,28 @@ As can be seen in \crefrange{fig:sep-hidden1}{fig:sep-nonlinear}, this allows us
 \end{figure}
 
 In general, our stacked model can be defined as
-\begin{align*}
+\begin{align}
  \mat y^0 &= \mat x \\
  \mat y^l &= g^l(\mat y^{l-1} \mat W^l + \mat b^l) \quad l \in [1, N] \\
  \mat y &= \mat y^N
-\end{align*}
+\end{align}
 where $N$ is the number of hidden or output layers, and $g^l$, $\mat W^l \in \mathbb{R}^{n^{l-1} \times n^l}$, $\mat b^l \in \mathbb{R}^{1 \times n^l}$ and $n^l$ are the activation function, weight matrix, bias vector and layer size (in number of units) corresponding to layer $l$, respectively.
 This is known as a \emph{feedforward artificial neural network}; see \cref{fig:feedforward} for a graphical representation.
 By setting
-\begin{align*}
+\begin{align}
 g^1(\mat z)_i &= 2\varphi(z_i) - 1 &
 \mat W^1 &= \left(\begin{matrix}1 & 0 \\ 0 & 1\end{matrix}\right) &
 \mat b^1 &= \mat 0 \\
 %
 g^2(z) &= z &
 \mat W^2 &= \left(\begin{matrix}1 \\ 1\end{matrix}\right) &
-b^2 &= -0.5 \\
-\end{align*}
+b^2 &= -0.5
+\end{align}
 with $N = 2$, we obtain the previous example.
 
 The number of hidden layers to use in a network deserves some consideration.
 It has been shown that a feedforward network with a single hidden layer can approximate virtually any continuous function, as long as the number of hidden units is large enough \parencite{hornik1989multilayer}.
-However, theoretical results suggest that the complexity of the model in terms of the types of functions it is able to express grows exponentially in the number of layers, meaning that a shallow network with only one hidden layer would need to consist of an exponential number of hidden units to match the complexity of a deep architecture \parencite{delalleau2011shallow,montufar2014number}.
+However, theoretical results suggest that the complexity of the model in terms of the types of functions it is able to express grows exponentially in the number of layers, meaning that a shallow network with only one hidden layer would need to consist of an exponential number of hidden units to match the complexity of a deep architecture \parencite{montufar2014number}.
 
 \subsection{Activation functions}
 
@@ -434,18 +436,18 @@ Typically, however, all hidden layers use the same activation function, with the
 
 For classification, an activation function that makes it possible to interpret the output as a one or more probability distributions is generally used.
 A common choice is the softmax function, which normalises the output to sum to 1:
-\[
+\begin{equation}
 \mathrm{softmax}(\mat z)_i = \frac{e^{z_i}}{\sum_j e^{z_j}}.
-\]
+\end{equation}
 For multi-label classification one can use the logistic function, defined as
-\[
+\begin{equation}
 \sigma(\mat z)_i = \frac{1}{1 + e^{-z_i}}.
-\]
+\end{equation}
 
 When doing regression on the other hand, it is common to simply use a linear activation function:
-\[
+\begin{equation}
  g(\mat z) = \mat z.
-\]
+\end{equation}
 
 \subsubsection{Hidden layers}
 
@@ -454,13 +456,13 @@ Thus, it is vital that the activation function used for the hidden layers be non
 However, it can be advantageous to use a \emph{mostly linear} activation function, not least because both the function itself and its derivative becomes very fast to calculate.
 
 Examples of mostly linear activation functions that have been shown to outperform other activation functions in many contexts include the rectified linear unit \parencite{glorot2011deep}:
-\[
+\begin{equation}
 \mathrm{ReLU}(\mat z) = \max(\mat 0, \mat z)
-\]
+\end{equation}
 and the maxout unit \parencite{goodfellow2013maxout}:
-\[
+\begin{equation}
 \mathrm{maxout}(\mat y^{l-1}) = \max(\mat y^{l-1} \mat W^l + \mat b^l, \mat y^{l-1} \mat V^l + \mat c^l)
-\]
+\end{equation}
 where $\max$ is performed element-wise, i.e.\ $\max(\mat u, \mat v)_i = \max(u_i, v_i)$.
 Note that the input to maxout is the output of the previous layer rather than a weighted sum; it is a generalisation of the ReLU, keeping multiple (not necessarily limited to only two) sets of weight and bias values.
 
@@ -472,34 +474,34 @@ This causes training of the network to slow down, especially in networks with ma
 
 \subsection{Training neural networks}
 
-In order to produce any useful results, the parameters (weights and biases) $\boldsymbol \theta$ of the network need to be tuned.
-This tuning is referred to as \emph{training} the network, and is performed by minimising some cost function (also known as a loss function or objective function) $L(\mat x, \mat y; \boldsymbol \theta)$ where $\mat x$ is the input to the network, and $\mat y$ is the \emph{expected} output of the network.
-If $\hat{\mat y} = f(\mat x; \boldsymbol \theta)$ is the actual output of the network, $L(\mat x, \mat y; \boldsymbol \theta)$ defines some measure of how dissimilar $\hat{\mat y}$ and $\mat y$ are.
+In order to produce any useful results, the parameters (weights and biases) $\mat \theta$ of the network need to be tuned.
+This tuning is referred to as \emph{training} the network, and is performed by minimising some loss function (also known as a cost function or objective function) $L(\mat \theta; \mat x, \mat y)$ where $\mat x$ is the input to the network, and $\mat y$ is the \emph{expected} output of the network.
+If $\hat{\mat y} = f(\mat x; \mat \theta)$ is the actual output of the network, $L(\mat x, \mat y; \boldsymbol \theta)$ defines some measure of how dissimilar $\hat{\mat y}$ and $\mat y$ are.
 
-For classification, the most common cost function is the cross-entropy between $\mat y$ and $\mat x$, defined as
-\[
- L_{\mathrm{CE}}(\mat x, \mat y; \boldsymbol \theta) = -\sum_{j=1}^m y_j \log \hat y_j.
-\]
+For classification, the most common loss function is the cross-entropy between $\mat y$ and $\mat x$, defined as
+\begin{equation}
+ L_{\mathrm{CE}}(\mat \theta; \mat x, \mat y) = -\sum_{j=1}^m y_j \log \hat y_j.
+\end{equation}
 For single-class classification such that one output is 1 and all others 0, this simplifies to
-\[
- L_{\mathrm{CE}}(\mat x, \mat y; \boldsymbol \theta) = -\log \hat y_j
-\]
+\begin{equation}
+ L_{\mathrm{CE}}(\mat \theta; \mat x, \mat y) = -\log \hat y_j
+\end{equation}
 for the $j$ such that $y_j = 1$.
-Minimising the cross-entropy between $\mat y$ and $\mat x$ with respect to $\mat x$ is equivalent to minimising the Kullback--Leibler divergence between the same, making it appropriate as a cost function when interpreting the network output as a probability distribution.
+Minimising the cross-entropy between $\mat y$ and $\mat x$ with respect to $\mat x$ is equivalent to minimising the Kullback--Leibler divergence between the same, making it appropriate as a loss function when interpreting the network output as a probability distribution.
 
 Regression often makes use of the mean squared error (sometimes multiplied by a factor of $\frac{1}{2}$) instead:
-\[
-L_{\mathrm{MSE}}(\mat x, \mat y; \boldsymbol \theta) = \frac{1}{m} \lVert\hat {\mat y} - \mat y\rVert_2^2.
-\]
-Autoencoders, which attempt to find a low-dimensional representation of the input data from which the data can be reconstructed, use $L_{\mathrm{MSE}}(\mat x, \mat x; \boldsymbol \theta)$, called the reconstruction error, as the cost function.
+\begin{equation}
+L_{\mathrm{MSE}}(\mat \theta; \mat x, \mat y) = \lVert\hat {\mat y} - \mat y\rVert_2^2.
+\end{equation}
+Autoencoders, which attempt to find a low-dimensional representation of the input data from which the data can be reconstructed, use $L_{\mathrm{MSE}}(\mat \theta; \mat x, \mat x)$, called the reconstruction error, as the loss function.
 
-Once the cost function is defined, the network can be trained by iteratively modifying the network parameters through gradient descent.
+Once the loss function is defined, the network can be trained by iteratively modifying the network parameters through gradient descent.
 Usually a special form of gradient descent called mini-batch gradient descent is used, where the network is presented with a small subset of the examples at each iteration, and the gradient is averaged over the presented examples.
 Let $B$ be the number of examples per iteration (the batch size) and $(\mat x_1, \mat y_1), (\mat x_2, \mat y_2), \dots, (\mat x_B, \mat y_B)$ be $B$ training examples to be presented to the network this batch.
-We can the state the training procedure as
-\[
-\boldsymbol \theta^{t+1} \gets \boldsymbol \theta^t - \eta\frac{\partial}{\partial \boldsymbol \theta}\left(\frac{1}{B} \sum_{i=1}^B L(\mat x_i, \mat y_i; \boldsymbol \theta^t)\right)
-\]
+We can then state the training procedure as
+\begin{equation}
+\boldsymbol \theta^{t+1} \gets \boldsymbol \theta^t - \eta\frac{\partial}{\partial \boldsymbol \theta}\left(\frac{1}{B} \sum_{i=1}^B L(\mat \theta^t; \mat x_i, \mat y_i)\right)
+\end{equation}
 where $\eta$ is the ``learning rate''.
 Tuning the learning rate is important, as a high learning rate means faster learning, but setting it too high may prevent the training from converging.
 
