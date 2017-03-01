@@ -15,6 +15,7 @@
 # 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 import collections
+import itertools
 import pathlib
 import re
 import string
@@ -68,6 +69,30 @@ def parse_esps(labelpath):
                     start_times[i] = end_time
 
     return tiers
+
+def parse_vad(vad_file):
+    vad = vad_file.read().splitlines()
+
+    deliminator = ","
+    header = vad[0].split(deliminator)
+    if len(header) != 3:
+        deliminator = " "
+        header = vad[0].split(deliminator)
+        assert len(header) == 3
+
+    try:
+        float(header[1])
+        float(header[2])
+    except ValueError:
+        vad = vad[1:]
+
+    vad = [(fname, float(start), float(end))
+            for fname, start, end in (line.split(deliminator)
+                                      for line in vad)]
+    vad.sort()
+    files = {fname: [(start, end) for _, start, end in values]
+                for fname, values in itertools.groupby(vad, key=lambda x: x[0])}
+    return files
 
 # all labels:
 # {'ih', 'ae+1', 'ay', 'no', 'uw+1', 'aw', 'iy+1', 'w', 'd', 'aw+1', 'oy', 'sh', 'aan', 'a', 'e', 'ayn', 'ih+1', 'hh', 'i', 'uw ix', 'ao+1', 'g', 'hhn', 'er', 'own', 'oy+1', 'tq', 'em', 'eh+1', 'el', 'b', 'ch', 'ao', 'aa', 'dh', 'id', 'iy', 'ow+1', 'nx', 'eh', 'awn', 'eng', 'r', 'ay+1', 'x', 'ihn', 'ow', 'ey', 'ae', 'ah r', 'p', 'h', 'ih l', 'ey+1', 'an', 'v', 'uwn', 'uhn', 'm', 'k', 'ern', 'ah l', 'ah', 't', 'ah+1n', 'ng', 'uw', 'iyn', 'j', 'uh', 'dx', 's', 'ahn', 'z', 'y', 'uh+1', 'oyn', 'en', 'aen', 'aa+1', 'l', 'f', 'ah n', 'ah ix', 'ehn', 'eyn', 'jh', 'q', 'aon', 'zh', 'ah+1', 'n', 'th'}
