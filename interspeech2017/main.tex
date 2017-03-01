@@ -1,0 +1,54 @@
+\documentclass[a4paper]{article}
+
+\usepackage{INTERSPEECH_v2}
+\usepackage{lipsum} % we can remove this at the end
+
+\title{Paper Template for INTERSPEECH}
+\name{Author Name$^1$, Co-author Name$^2$}
+\address{
+  $^1$Author Affiliation, Sweden\\
+  $^2$Co-author Affiliation, Australia}
+\email{author@university.edu, coauthor@company.com}
+
+\begin{document}
+
+\maketitle
+% 
+\begin{abstract}
+\input{00-abstract}
+\end{abstract}
+% check these
+\noindent\textbf{Index Terms}: zero-resource speech challenge, unsupervised learning, speech recognition
+
+\input{01-introduction}
+\input{02-method}
+\input{03-experiments}
+\input{04-results}
+\input{05-discussion_and_conclusions}
+
+\section{Acknowledgements}
+
+\bibliographystyle{IEEEtran}
+
+\bibliography{references}
+
+% \begin{thebibliography}{9}
+% \bibitem[1]{Davis80-COP}
+%   S.\ B.\ Davis and P.\ Mermelstein,
+%   ``Comparison of parametric representation for monosyllabic word recognition in continuously spoken sentences,''
+%   \textit{IEEE Transactions on Acoustics, Speech and Signal Processing}, vol.~28, no.~4, pp.~357--366, 1980.
+% \bibitem[2]{Rabiner89-ATO}
+%   L.\ R.\ Rabiner,
+%   ``A tutorial on hidden Markov models and selected applications in speech recognition,''
+%   \textit{Proceedings of the IEEE}, vol.~77, no.~2, pp.~257-286, 1989.
+% \bibitem[3]{Hastie09-TEO}
+%   T.\ Hastie, R.\ Tibshirani, and J.\ Friedman,
+%   \textit{The Elements of Statistical Learning -- Data Mining, Inference, and Prediction}.
+%   New York: Springer, 2009.
+% \bibitem[4]{YourName17-XXX}
+%   F.\ Lastname1, F.\ Lastname2, and F.\ Lastname3,
+%   ``Title of your INTERSPEECH 2017 publication,''
+%   in \textit{Interspeech 2017 -- 18\textsuperscript{th} Annual Conference of the International Speech Communication Association, August 20?24, Stockholm, Sweden, Proceedings, Proceedings}, 2017, pp.~100--104.
+% \end{thebibliography}
+
+\end{document}
