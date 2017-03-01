@@ -231,12 +231,30 @@ def mfcc(*, mfccs=13, first_order=False, second_order=False, **kwargs):
 
     return extractor, (mfccs * (1 + first_order + second_order),)
 
+@feature_extractor()
+def normalize(*, dims, mean, std, **kwargs):
+    def extractor(data):
+        return (data - mean) / std
+    return extractor, dims
+
+def calculate_mean_std(inset):
+    running_mean = 0
+    running_squares = 0
+    n = 0
+    def collect_statistics(data):
+        nonlocal running_mean, running_squares, n
+        m = n + data.shape[0]
+        running_mean = (n/m) * running_mean + (data / m).sum(axis=0)
+        running_squares = (n/m) * running_squares + (data**2 / m).sum(axis=0)
+        n = m
+    iterate_data(inset, collect_statistics)
+    std = np.sqrt(running_squares - running_mean**2)
+    print("Mean: {}; Std: {}".format(running_mean, std))
+    return running_mean, std
 
 def log():
     pass
 
-def normalize():
-    pass
 
 def randomize():
     pass
@@ -315,6 +333,12 @@ def fbank_comm(**kwargs):
 @main.command('mfcc')
 def mfcc_comm(**kwargs):
     return mfcc(**kwargs)
+
+@extractor_command(dtype='f4')
+@main.command('normalize')
+def normalize_comm(inset, **kwargs):
+    mean, std = calculate_mean_std(inset)
+    return normalize(mean=mean, std=std, **kwargs)
 
 if __name__ == '__main__':
     main()
