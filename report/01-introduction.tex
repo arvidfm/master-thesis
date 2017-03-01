@@ -15,11 +15,26 @@
 % 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
 \chapter{Introduction}
-
 \section{Background}
-\section{The Zero Resource Speech Challenge}
-\subsection{Track 1: Unsupervised subword modelling}
-\subsection{Track 2: Spoken term discovery}
+Automatic speech recognition (ASR) is generally framed as a supervised task, where both audio data and the corresponding transcription is available, and the problem is to develop a model that can mimic this mapping from speech to text.
+However, developing such data is expensive, both in terms of time and money, as it involves painstakingly transcribing many hours of speech and aligning the transcription in time by hand.
+As a result, there is a notable lack of high-quality data for speech recognition for a majority of languages around the world.
+An important question is thus whether it is possible to make use of untranscribed, or unlabelled, data to develop ASR for such low-resource languages.
+Unsupervised learning in this manner may also provide insight into the linguistic structure of languages, or the language acquisition of infants.
+
+Unsupervised speech recognition is an area of active research.
+One source of research in this area is the Zero Resource Speech Challenge \parencite{versteegh2015zero}, which was developed with the goal of finding linguistic units (track 1) or longer recurring word-like fragments (track 2) in speech.
+Models are to be trained using only speech data, voice activity information, and speaker identity information.
+In the spirit of the Zero Resource Speech Challenge, this thesis will follow the first track of the challenge, using the same training data and evaluation procedure.
+
+One approach that has proved itself successful in modelling linguistic units is to first discover recurring speech fragments, and then use these fragments as constraints to construct features where speech frames corresponding to the same sound are similar \parencite{synnaeve2014phonetics,thiolliere2015hybrid}.
+One motivation for taking this top-down approach is that sounds that in reality correspond to the same linguistic unit may seem very different when inspecting speech at specific time instances, especially when comparing different speakers; however, when viewed at a larger time scale, patterns from e.g.\ recurring words are easier to find \parencite{jansen2013weak}.
+
+Simpler approaches such as direct clustering of unlabelled speech has also been shown to perform well \parencite{chen2015parallel}.
+This work seeks to find whether it is possible to combine the two approaches, by first inferring a probabilistic model from unlabelled speech, and afterwards improving on this model using speech fragment information.
+This approach is similar to the one of \textcite{jansen2013weak}, where a universal background model in the form of a Gaussian mixture model is inferred and later partitioned, with the difference that the partitioning is done approximately using a linear siamese model inspired by \textcite{synnaeve2014phonetics}, taking advantage of both same-class and different-class fragment information.
 
 \section{Objective}
-
+This work seeks to find speaker-invariant speech features which can be used to discriminate between different linguistic units in a robust manner.
+We focus in particular on simpler, interpretable models that improve on features inferred from unlabelled data, thus also making use of the full set of unlabelled data, in addition to speech fragment information.
+The goal is for the model to noticably improve on the input features, as well as to achieve competitive results in the context of the first track of the Zero Resource Speech Challenge.
