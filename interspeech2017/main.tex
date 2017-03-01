@@ -1,7 +1,11 @@
 \documentclass[a4paper]{article}
 
+\usepackage[style=ieee,backend=biber]{biblatex}
 \usepackage{INTERSPEECH_v2}
 \usepackage{lipsum} % we can remove this at the end
+\renewcommand*\bibfont{\eightpt}
+
+\addbibresource{references.bib}
 
 \title{Paper Template for INTERSPEECH}
 \name{Author Name$^1$, Co-author Name$^2$}
@@ -28,9 +32,10 @@
 
 \section{Acknowledgements}
 
-\bibliographystyle{IEEEtran}
+\printbibliography[heading=bibnumbered]
+%\bibliographystyle{IEEEtran}
 
-\bibliography{references}
+%\bibliography{references}
 
 % \begin{thebibliography}{9}
 % \bibitem[1]{Davis80-COP}
