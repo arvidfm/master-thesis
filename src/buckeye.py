@@ -101,7 +101,7 @@ def parse_vad(vad_file):
 SectionData = collections.namedtuple('SectionData', ['start', 'end'])
 FileData = collections.namedtuple('FileData', ['transcription'])
 
-def get_recording(filepath, section, exclude_nonspeech=True, **kwargs):
+def get_recording(filepath, section):
     with filepath.open('rb') as f:
         rate, samples = scipy.io.wavfile.read(f)
         samples = samples.astype('float32')
@@ -111,45 +111,47 @@ def get_recording(filepath, section, exclude_nonspeech=True, **kwargs):
 
     tiers = parse_esps(filepath.parent / (filepath.stem + ".phones"))
 
-    #if not exclude_nonspeech:
-    #    return samples, tiers[0], [(0, (0, 0))]
+    section.create_section(data=samples, metadata=(0, samples.shape[0] / rate))
 
-    section_start = 0
-    section_end = 0
-    for start_time, end_time, label in tiers[0]:
-        # convert time to sample number
-        start, end = int(start_time * rate), int(end_time * rate)
+    section.metadata = tiers[0]
 
-        if any(label.startswith(nsl) for nsl in nonspeech_labels):
-            if section_end > 0:
-                section.create_section(
-                    data=samples[section_start : section_end],
-                    metadata=(section_start / rate, section_end / rate))
-            section_start = end
-            section_end = 0
-        else:
-            section_end = end
-
-    section.metadata = (tiers[0])
-
-def get_speaker(speaker, section):
+def get_speaker(speaker, section, files=None, **kwargs):
     print(speaker)
-    recordings = speaker.glob("{}*/*.wav".format(speaker.stem))
+    recordings = sorted(recording
+                        for recording in speaker.glob("{}*/*.wav".format(speaker.stem))
+                        if files is None or recording.stem in files)
     for recording in recordings:
-        get_recording(recording, section.create_section(recording.stem))
+        get_recording(recording, section.create_section(recording.stem), **kwargs)
 
-def get_corpus(corpuspath, hdf5file, outset):
-    speakers = pathlib.Path(corpuspath).glob("s*")
-    dataset = hdf5file.create_dataset(outset, (), 'i2')
+    return recordings
+
+def get_corpus(corpuspath, hdf5file, outset, filter_speakers=None, **kwargs):
+    speakers = sorted(pathlib.Path(corpuspath).glob("s*"))
+    dataset = hdf5file.create_dataset(outset, (), 'i2', overwrite=True)
+
+    mapping = {}
     for speaker in speakers:
-        get_speaker(speaker, dataset.create_section(speaker.stem))
+        if filter_speakers is not None and speaker.name not in filter_speakers:
+            continue
+        recordings = get_speaker(speaker, dataset.create_section(speaker.stem), **kwargs)
+        mapping.update({recording.stem: speaker.stem for recording in recordings})
+
+    dataset.metadata = mapping
 
 @click.command()
 @click.argument('hdf5file', type=dataset.HDF5TYPE)
 @click.option('--corpuspath', type=click.Path(exists=True), required=True)
 @click.option('-o', '--outset', default='samples')
-def main(hdf5file, corpuspath, outset):
-    get_corpus(corpuspath, hdf5file, outset)
+@click.option('--files', type=click.File('r'))
+def main(hdf5file, corpuspath, outset, files):
+    if files is not None:
+        files = {f.rsplit('.', 1)[0] for f in files}
+        speakers = {f[:3] for f in files}
+    else:
+        speakers = None
+
+    get_corpus(corpuspath, hdf5file, outset,
+               filter_speakers=speakers, files=files)
 
 if __name__ == '__main__':
     main()
