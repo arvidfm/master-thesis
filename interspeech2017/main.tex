@@ -1,7 +1,12 @@
 \documentclass[a4paper]{article}
 
+\usepackage[style=ieee,backend=biber]{biblatex}
 \usepackage{INTERSPEECH_v2}
 \usepackage{lipsum} % we can remove this at the end
+\renewcommand*\bibfont{\eightpt}
+\setlength\biblabelsep{\labelsep}
+
+\addbibresource{references.bib}
 
 \title{Paper Template for INTERSPEECH}
 \name{Author Name$^1$, Co-author Name$^2$}
@@ -29,9 +34,10 @@
 \section{Acknowledgements}
 The GeForce GTX TITAN used for this research were donated by the NVIDIA Corporation. This research was partly supported by the CHIST-ERA project IGLU ()
 
-\bibliographystyle{IEEEtran}
+\printbibliography[heading=bibnumbered]
+%\bibliographystyle{IEEEtran}
 
-\bibliography{references}
+%\bibliography{references}
 
 \end{document}
 
