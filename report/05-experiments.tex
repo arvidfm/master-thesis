@@ -20,7 +20,7 @@
 This chapter describes the application of the model described in \cref{ch:methods} to the task of unsupervised modelling of speech, and in particular the use of the model to improve posteriorgrams generated from a Gaussian mixture model.
 First the experimental setup is described, including the data used, the how the data is processed, and how the models are implemented.
 Next, a number of experiments aimed at tuning hyperparameters and comparing models are described.
-Finally, the models are evaluated using the ABX discriminability task.
+Finally, the models are evaluated using the minimal-pair ABX task.
 
 \section{Experimental setup}
 \subsection{Data}
@@ -116,6 +116,7 @@ To solve this, we restate the Jensen-Shannon loss function, allowing us to speci
 Let $B_1 = \{i \in B : c_i = 1\}$ be the subset of same-class frame pairs in the current minibatch, and $B_0 = \{i \in B : c_i = 0\}$ the subset of different-class frame pairs.
 We then restate the loss as
 \begin{equation}
+  \label{eq:rebalanced}
   \frac{1}{(\alpha + 1)|B_1|} \sum_{i \in B_1} L_{\mathrm{same}}(\mat V; \mat x_i, \mat y_i) + \frac{\alpha}{(\alpha + 1)|B_0|} \sum_{i \in B_0} L_{\mathrm{diff}}(\mat V; \mat x_i, \mat y_i),
 \end{equation}
 where $L_{\mathrm{same}}$ and $L_{\mathrm{diff}}$ are the same-class and different-class losses defined in \cref{eq:js-loss}.
@@ -204,11 +205,13 @@ As one might expect, more emphasis on the different-class loss results in a high
 The optimal value of $\alpha$ seems to be around 1.5 for both data sets, we use this value of $\alpha$ going forward.
 
 \section{Discretising the model}
+\label{sec:discrete}
 As the resulting model is sparse, we can retrieve an exact surjection by discretising the model.
 We do this by for each row in $\mat W$ setting the largest element to $1$ and the remaining elements to $0$.
 Using the discretised model as a base, we additionally experiment with discretising the output distribution by setting the largest output to 1 and the rest to 0; this can be thought of as taking the argmax of the output distribution.
 
 \section{Comparison with deep models}
+\label{sec:deep}
 To get an idea of how the JS loss performs in general, we build a deep network with two hidden layers of $500$ sigmoid units each, with $64$ softmax outputs.
 The network is trained using the non-rebalanced JS loss.
 As softmax outputs are naturally sparse, we do not enforce any entropy penalty.
@@ -224,3 +227,41 @@ All fragments are DTW aligned and sampled as in \cref{sec:utd}.
 \section{Interpreting the model}
 
 \section{ABX evaluation}
+\begin{table}
+ \centering
+ \begin{tabular}{lrrrrrr} \toprule
+   & \multicolumn{3}{c}{English} & \multicolumn{3}{c}{Xitsonga} \\ \cmidrule(lr){2-4} \cmidrule(lr){5-7}
+    Model & Silhouette & Within & Across & Silhouette & Within & Across \\ \midrule
+    GMM posteriors & 0.008 & 12.313 & 23.841 & 0.066 & 11.434 & 23.181 \\
+    Non-rebalanced & 0.089 & 14.195 & 21.369 & 0.111 & 16.477 & 25.551 \\
+    Rebalanced & 0.108 & 12.770 & 19.831 & 0.146 & 13.990 & 23.202 \\
+    Discretised $\mat W$ & 0.124 & 12.013 & 19.261 & 0.170 & 12.702 & 21.888 \\
+    Discretised output & 0.010 & 16.513 & 24.565 & 0.014 & 19.404 & 29.150 \\
+    Deep JS & -0.370 & 22.376 & 28.233 & -0.320 & 18.190 & 24.759 \\
+    Deep coscos$^2$ & 0.187 & 12.294 & 19.561 & 0.174 & 11.934 & 19.052 \\ \bottomrule
+ \end{tabular}
+
+ \caption{\label{tab:abx}Within-speaker and across-speaker ABX scores as well as the silhouette for the different models for both the English and Xitsonga data sets.
+   GMM posteriors is the posteriorgrams extracted from the 1024-component Gaussian mixture model; non-rebalanced is the original loss presented in \cref{eq:original-loss}; rebalanced is the alternative loss presented in \cref{eq:rebalanced} with ${\alpha = 1.5}$; discretised $\mat W$ and discretised output are the models presented in \cref{sec:discrete}; and the deep models are those presented in \cref{sec:deep}.
+   The silhouette is calculated on a subset of 1000 clusters for each language.
+   All shallow models are trained with an entropy penalty of $\lambda = 0.1$.}
+\end{table}
+
+We evaluate the models discussed on the minimal-pair ABX task \parencite{schatz2013evaluating}.
+In the task we are presented with three speech fragments A, B and X, where A and B form minimal pairs, i.e.\ they only differ by a single phoneme.
+The task is to decide which of either A or B belongs to the same category as X.
+This is done by DTW-aligning A and B with X with respect to some underlying frame-based metric.
+The fragment closest to X according to the DTW score is chosen.
+The task takes two forms: within-speaker discriminability, where all fragments belong to the same speaker, and across-speaker discriminability, where A and B belong to one speaker while X belongs to another.
+
+The models are evaluated using a evaluation toolkit provided for the Zero Resource Speech Challenge.
+The results are shown in \cref{tab:abx}, along with the silhouette for each model.
+The frame-based metric is chosen as the symmetrised Kullback-Leibler divergence (with the model output normalised as necessary), with the exception of the model with discretised output, which uses the cosine distance, which for one-hot vectors amounts to a distance of 0 for identical and 1 for non-identical vectors.
+
+We can see that in general, the silhouette seems to be indicative of the relative performance on the ABX task.
+Our suspicion that the number of outputs used were too few when using the Jensen-Shannon loss as originally stated is validated, with the rebalanced loss performing better for both English and Xitsonga.
+The performance of the model with discretised weights further suggests that the basic premise of improving posteriorgrams by partitioning is a sound one.
+
+The deep model performs poorly when trained with the Jensen-Shannon loss, despite the same architecture performing well when trained with the coscos$^2$ loss.
+Inspecting the average output of the deep model over the English data set, we found that only 6 outputs are actually used by the model.
+This suggests that the JS loss is more sensitive than the coscos$^2$ loss when it comes to balancing the same-class and different-class losses.

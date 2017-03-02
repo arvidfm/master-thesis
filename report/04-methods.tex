@@ -118,6 +118,7 @@ The entropy penalty implicitly encourages sparsity in $\mat W$, as the only way 
 It is thus through this penalty that we enforce the model to find an approximate surjection.
 In summary, our final loss function over a minibatch $B$ is as follows:
 \begin{equation}
+  \label{eq:original-loss}
   L(\mat V; B) = \frac{1}{|B|} \sum_{i \in B} L_{\mathrm{JS}}(\mat V; \mat x_i, \mat y_i, c_i) + \frac{\lambda}{2|B|} \sum_{i \in B} (\hat H(f(\mat x_i; \mat V)) + \hat H(f(\mat y_i; \mat V)))
 \end{equation}
 where $\lambda$ is a hyperparameter.
