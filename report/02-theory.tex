@@ -496,11 +496,11 @@ L_{\mathrm{MSE}}(\mat \theta; \mat x, \mat y) = \lVert\hat {\mat y} - \mat y\rVe
 Autoencoders, which attempt to find a low-dimensional representation of the input data from which the data can be reconstructed, use $L_{\mathrm{MSE}}(\mat \theta; \mat x, \mat x)$, called the reconstruction error, as the loss function.
 
 Once the loss function is defined, the network can be trained by iteratively modifying the network parameters through gradient descent.
-Usually a special form of gradient descent called mini-batch gradient descent is used, where the network is presented with a small subset of the examples at each iteration, and the gradient is averaged over the presented examples.
-Let $B$ be the number of examples per iteration (the batch size) and $(\mat x_1, \mat y_1), (\mat x_2, \mat y_2), \dots, (\mat x_B, \mat y_B)$ be $B$ training examples to be presented to the network this batch.
+Usually a special form of gradient descent called minibatch gradient descent is used, where the network is presented with a small subset of the examples at each iteration, and the gradient is averaged over the presented examples.
+Let $B = \{i_1, i_2, \dots, i_K\}$ be $K$ indices forming one minibatch.
 We can then state the training procedure as
 \begin{equation}
-\boldsymbol \theta^{t+1} \gets \boldsymbol \theta^t - \eta\frac{\partial}{\partial \boldsymbol \theta}\left(\frac{1}{B} \sum_{i=1}^B L(\mat \theta^t; \mat x_i, \mat y_i)\right)
+\boldsymbol \theta^{t+1} \gets \boldsymbol \theta^t - \eta\frac{\partial}{\partial \boldsymbol \theta}\left(\frac{1}{|B|} \sum_{i \in B} L(\mat \theta^t; \mat x_i, \mat y_i)\right)
 \end{equation}
 where $\eta$ is the ``learning rate''.
 Tuning the learning rate is important, as a high learning rate means faster learning, but setting it too high may prevent the training from converging.
