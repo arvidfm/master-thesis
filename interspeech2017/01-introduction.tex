@@ -16,12 +16,11 @@ One motivation for taking this top-down approach is that sounds that in reality 
 
 Simpler approaches such as direct clustering of unlabelled speech has also been shown to perform well \parencite{chen2015parallel}.
 This work seeks to find whether it is possible to combine the two approaches, by first inferring a probabilistic model from unlabelled speech, and afterwards improving on this model using speech fragment information.
-This approach is similar to the one of \textcite{jansen2013weak}, where a universal background model in the form of a Gaussian mixture model is inferred and later partitioned, with the difference that the partitioning is done approximately using a linear siamese model inspired by \textcite{synnaeve2014phonetics}, taking advantage of both same-class and different-class fragment information.
+This approach is similar to the one in \parencite{jansen2013weak}, where a universal background model in the form of a Gaussian mixture model is inferred and later partitioned, with the difference that the partitioning is done approximately using a linear siamese model inspired by \parencite{synnaeve2014phonetics}, taking advantage of both same-class and different-class fragment information.
 
 \subsection{Related work}
 
-This \namecref{ch:related-work} provides a brief overview of recent research into unsupervised acoustic modelling.
-The approaches discussed here can broadly be divided into two categories: bottom-up approaches that infer the acoustic model directly from the speech frames, and top-down approaches that first segment the speech into syllable- or word-like units, and afterwards try break these units into smaller subword units.
+Approaches to unsupervised acoustic modelling can broadly be divided into two categories: bottom-up methods that infer the acoustic model directly from the speech frames, and top-down methods that first segment the speech into syllable- or word-like units, and afterwards try break these units into smaller subword units.
 
 \subsubsection{Bottom-up approaches}
 
