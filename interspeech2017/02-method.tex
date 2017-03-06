@@ -101,10 +101,11 @@ The normalised entropy is always between 0 (for degenerate distributions) and 1 
 The entropy penalty implicitly encourages sparsity in $\mat W$, as the only way to avoid spreading the probability mass across several outputs is for each row of $\mat W$ to only contain a single element close to $1$.
 It is thus through this penalty that we enforce the model to find an approximate surjection.
 In summary, our final loss function over a minibatch $B$ is as follows:
-\begin{equation}
+\begin{multline}
   \label{eq:original-loss}
-  L(\mat V; B) = \frac{1}{|B|} \sum_{i \in B} L_{\mathrm{JS}}(\mat V; \mat x_i, \mat y_i, c_i) + \frac{\lambda}{2|B|} \sum_{i \in B} (\hat H(f(\mat x_i; \mat V)) + \hat H(f(\mat y_i; \mat V)))
-\end{equation}
+  L(\mat V; B) = \frac{1}{|B|} \sum_{i \in B} L_{\mathrm{JS}}(\mat V; \mat x_i, \mat y_i, c_i) + \\ 
+  +\frac{\lambda}{2|B|} \sum_{i \in B} \left(\hat H\left(f(\mat x_i; \mat V)\right) + \hat H\left(f(\mat y_i; \mat V)\right)\right)
+\end{multline}
 where $\lambda$ is a hyperparameter.
 
 

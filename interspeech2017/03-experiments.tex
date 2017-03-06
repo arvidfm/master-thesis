@@ -101,7 +101,7 @@ Solving for $K$ we have
 which is an approximation of the number of outputs used by the model, which we define as the spread.
 A value of $K$ close to $D$ is an indicator that all the outputs are being used equally, suggesting that it may be a good idea to increase the number of outputs.
 
-\begin{figure*}
+\begin{figure}
  \centering
  \begin{tikzpicture}
    \pgfplotsset{set layers}
@@ -112,8 +112,9 @@ A value of $K$ close to $D$ is an indicator that all the outputs are being used 
      axis y line*=left,
      xlabel=$\alpha$,
      ylabel=Silhouette,
+     ylabel near ticks,
      yticklabel style={/pgf/number format/fixed},
-     height=5cm,width=8cm,
+     height=0.6\columnwidth,width=0.8\columnwidth,
      legend style={opacity=0.0}]%,
       %legend style={column sep=10pt},legend entries={Silhouette (English),Silhouette (Xitsonga)},legend cell align=left]
       \addplot table[x=alpha,y=sil-en] {data/silhouette.txt}; \label{sil1}
@@ -130,7 +131,8 @@ A value of $K$ close to $D$ is an indicator that all the outputs are being used 
      axis y line*=right,
      axis x line=none,
      ylabel=Spread,
-     height=5cm,width=8cm,
+     ylabel near ticks,
+     height=0.6\columnwidth,width=0.8\columnwidth,
      legend style={anchor=north west,at={(0.02,0.98)}}]%,
       %legend style={column sep=10pt},legend entries={Silhouette (English),Silhouette (Xitsonga)},legend cell align=left]
    %\addplot+[mark=x] table[x=alpha,y=sil-en] {data/silhouette.txt};
@@ -145,7 +147,7 @@ A value of $K$ close to $D$ is an indicator that all the outputs are being used 
  \end{tikzpicture}
 
  \caption{\label{fig:silhouette} Silhouette and spread for different weightings of the same-class and different-class losses.}
-\end{figure*}
+\end{figure}
 
 \Cref{fig:silhouette} shows the silhouette and spread for different values of $\alpha$.
 As one might expect, more emphasis on the different-class loss results in a higher spread, i.e.\ a larger number of output classes.
