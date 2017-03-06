@@ -1,5 +1,111 @@
 \section{Method}
-\lipsum[4]
+\label{sec:method}
+
+This \namecref{ch:methods} describes the shallow siamese network used to find an approximate class-merging surjection.
+
+\section{Model}
+We take as input a set $\{(\mat x_i, \mat y_i)\}_{i=1}^N$ of $N$ pairs of $M$-dimensional posteriorgrams, i.e.\ (row) vectors of probabilities such that the probabilities sum to one.
+Additionally, we have a set of indicators $\{c_i\}_{i=1}^N$ such that $c_i$ is $1$ if $\mat x_i$ and $\mat y_i$ belong to the same class, and $0$ otherwise.
+The posteriorgrams are taken to represent a distribution over $M$ discrete ``pseudo''-classes (e.g.\ allophones), where several pseudo-classes together describe a single ``true'' class (e.g.\ phonemes).
+Our goal is then to find a surjection that maps the $M$ pseudo-classes to a smaller set of $D$ classes, where we take the probability of a single output class to be the sum of the probabilities of the pseudo-classes that map to the class in question.
+
+To simplify optimisation we relax the problem to one of instead finding a continuous linear mapping $f : [0,1]^M \to [0,1]^D$ from the original space to a lower-dimensional space, such that $f(\mat x_i)$ and $f(\mat y_i)$ are close if $\mat x_i$ and $\mat y_i$ belong to the same true class, and distant otherwise.
+We consider each output probability to be a weighted combination of input probabilities: $f(\mat x)_j = \sum_{i=1}^M x_i w_{ij}$, or in matrix notation:
+\begin{equation}
+ f(\mat x) = \mat x \mat W
+\end{equation}
+where $\mat W = (w_{ij}) \in \mathbb R^{M \times D}$.
+If the elements of $\mat W$ are constrained to only take on values in $\{0, 1\}$, and each row of $\mat W$ contains exactly one element with the value $1$, the problem is reduced to finding an exact surjection.
+
+Even in the relaxed version of the problem, we need to put certain constraints on $\mat W$ in order to ensure that the output $f(\mat x)$ is a posteriorgram.
+First, we need to ensure that all outputs are positive.
+As the input $\mat x$ is a posteriorgram, meaning that all elements in $\mat x$ are positive, it clearly suffices to ensure that all elements in $\mat W$ are positive.
+Second, the output probabilities must sum to 1.
+This can be achieved by ensuring that the elements of each row of $\mat W$ sum to 1, as can be seen by:
+\begin{equation}
+ f(\mat x) \mat 1_D = \mat x \mat W \mat 1_D = \mat x \mat 1_D = 1
+\end{equation}
+where $\mat 1_D$ is a column vector of $D$ ones.
+
+In order to ensure that these constraints hold, we construct our model as follows:
+\begin{align}
+  \mat V &\in \mathbb R^{M \times D} \\
+  \mat{\widetilde W} &= |\mat V| \\
+  \mat W &= \mat{\widetilde W} \oslash \left(\mat{\widetilde W} \mat 1_D \mat 1_D^T\right) \\
+  f(\mat x) &= \mat x \mat W
+\end{align}
+where $|\cdot|$ denotes the element-wise absolute value, and $\oslash$ denotes element-wise division.
+This formulation makes it possible to optimise the model while ensuring that the constraints on $\mat W$ hold, by performing gradient descent with respect to $\mat V$.
+Note that the absolute value is almost everywhere differentiable, and the non-differentiability at $0$ does not matter in practice.
+
+To encourage the model to place points belonging to the same class close together in the output space, we consider the model as a siamese network.
+Conceptually this involves duplicating the model, creating two identical copies of the same network, with the parameters shared.
+We then feed one input each to both copies, and calculate the loss function using the corresponding outputs:
+\begin{equation}
+  L(\mat V; \mat x, \mat y, c) = \begin{cases}D_{\mathrm{same}}(f(\mat x; \mat V), f(\mat y; \mat V)) & \text{if } c = 1 \\
+    D_{\mathrm{diff}}(f(\mat x; \mat V), f(\mat y; \mat V)) & \text{if } c = 0\end{cases}
+\end{equation}
+where $D_{\mathrm{same}}$ and $D_{\mathrm{diff}}$ are the dissimilarity/similarity measures for pairs belonging to the same class, and pairs belonging to different classes, respectively.
+The loss function over a minibatch $B$ is given by the average
+\begin{equation}
+  \frac{1}{|B|} \sum_{i \in B} L(\mat V; \mat x_i, \mat y_i, c_i)
+\end{equation}
+which is minimised with respect to $\mat V$.
+
+\section{Loss function}
+
+As the output of the model is a probability distribution, it makes intuitive sense to use a statistical divergence as a measure of similarity.
+Perhaps the most well-known divergence is the Kullback-Leibler (KL) divergence, defined as:
+\begin{equation}
+  \mathrm{KL}(\mat x || \mat y) = \sum_i x_i \log_2\frac{x_i}{y_i},
+\end{equation}
+where we take $0 \log_2 0$ to be $0$.
+The KL divergence is always positive, and is 0 only if $\mat x = \mat y$.
+However, it is unbounded, and undefined if there is an $i$ such that $y_i = 0$ but $x_i \ne 0$.
+As such, trying to maximise the dissimilarity between two distributions with respect to the KL divergence is an ill-posed problem, as this will force the divergence to tend towards infinity.
+
+A better choice is the Jensen-Shannon (JS) divergence, defined as
+\begin{equation}
+  \mathrm{JS}(\mat x || \mat y) = \frac{1}{2} \mathrm{KL}(\mat x || \mat m) + \frac{1}{2} \mathrm{KL}(\mat y || \mat m)
+\end{equation}
+where $\mat m = (\mat x + \mat y)/2$.
+The JS divergence is always defined, and is bounded between $0$ (for identical distributions) and $1$ (for distributions with disjoint support), assuming that the base 2 logarithm is used.
+Additionally, the square root of the JS divergence is a metric satisfying the triangle inequality \parencite{endres2003new}; here we make use of this fact, in the hope that the metric properties will result in a more well-behaved loss function.
+
+Thus, we define the loss function as
+\begin{equation} \label{eq:js-loss}
+  L_{\mathrm{JS}}(\mat V; \mat x, \mat y, c) = \begin{cases}
+    \sqrt{\mathrm{JS}(f(\mat x; \mat V) || f(\mat y; \mat V))} & \text{if } c = 1 \\
+    1 - \sqrt{\mathrm{JS}(f(\mat x; \mat V) || f(\mat y; \mat V))} & \text{if } c = 0,
+  \end{cases}
+\end{equation}
+thereby minimising the root JS divergence between pairs belonging to the same class, and maximising the divergence between pairs belonging to different classes\footnote{For identical or near-identical $\mat x$ and $\mat y$, the JS divergence may become negative due to rounding errors caused by limited floating point precision; this can be counteracted by adding a small constant value before taking the square root.}.
+
+\section{Entropy penalty}
+
+To make the output of the model interpretable, it is desirable to ensure that for a given input, only one output unit is active.
+This can be done by introducing an entropy penalty, which attempts to minimise the spread of the probability mass.
+The entropy of a probability vector $\mat x = (x_1, \dots, x_D)$ is defined as
+\begin{equation}
+  H(\mat x) = -\sum_{i=1}^D x_i \log_2 x_i.
+\end{equation}
+However, this definition is sensitive to the value of $D$; for instance, the entropy of a uniform distribution vector is $\log_2 D$.
+
+As we may wish to vary the number of outputs of the model, it is of interest for the entropy penalty to be invariant to the number of outputs.
+We therefore introduce the normalised entropy, defined as
+\begin{equation}
+  \hat H(\mat x) = \frac{1}{\log_2 D} H(\mat x).
+\end{equation}
+The normalised entropy is always between 0 (for degenerate distributions) and 1 (for uniform distributions).
+
+The entropy penalty implicitly encourages sparsity in $\mat W$, as the only way to avoid spreading the probability mass across several outputs is for each row of $\mat W$ to only contain a single element close to $1$.
+It is thus through this penalty that we enforce the model to find an approximate surjection.
+In summary, our final loss function over a minibatch $B$ is as follows:
+\begin{equation}
+  \label{eq:original-loss}
+  L(\mat V; B) = \frac{1}{|B|} \sum_{i \in B} L_{\mathrm{JS}}(\mat V; \mat x_i, \mat y_i, c_i) + \frac{\lambda}{2|B|} \sum_{i \in B} (\hat H(f(\mat x_i; \mat V)) + \hat H(f(\mat y_i; \mat V)))
+\end{equation}
+where $\lambda$ is a hyperparameter.
 
 
 %%% Local Variables: 

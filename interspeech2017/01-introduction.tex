@@ -1,184 +1,110 @@
 \section{Introduction}
+\label{sec:introduction}
+Automatic speech recognition (ASR) is generally framed as a supervised task, where both audio data and the corresponding transcription is available, and the problem is to develop a model that can mimic this mapping from speech to text.
+However, developing such data is expensive, both in terms of time and money, as it involves painstakingly transcribing many hours of speech and aligning the transcription in time by hand.
+As a result, there is a notable lack of high-quality data for speech recognition for a majority of languages around the world.
+An important question is thus whether it is possible to make use of untranscribed, or unlabelled, data to develop ASR for such low-resource languages.
+Unsupervised learning in this manner may also provide insight into the linguistic structure of languages, or the language acquisition of infants.
 
-This template can be found on the conference website. Templates are provided for Microsoft Word\textregistered, and \LaTeX. However, we highly recommend using \LaTeX when preparing your submission. Information for full paper submission is available on the conference website.
+Unsupervised speech recognition is an area of active research.
+One source of research in this area is the Zero Resource Speech Challenge \parencite{versteegh2015zero}, which was developed with the goal of finding linguistic units (track 1) or longer recurring word-like fragments (track 2) in speech.
+Models are to be trained using only speech data, voice activity information, and speaker identity information.
+In the spirit of the Zero Resource Speech Challenge, this thesis will follow the first track of the challenge, using the same training data and evaluation procedure.
 
-\section{Page layout and style}
+One approach that has proved itself successful in modelling linguistic units is to first discover recurring speech fragments, and then use these fragments as constraints to construct features where speech frames corresponding to the same sound are similar \parencite{synnaeve2014phonetics,thiolliere2015hybrid}.
+One motivation for taking this top-down approach is that sounds that in reality correspond to the same linguistic unit may seem very different when inspecting speech at specific time instances, especially when comparing different speakers; however, when viewed at a larger time scale, patterns from e.g.\ recurring words are easier to find \parencite{jansen2013weak}.
 
-Authors should observe the following rules for page layout. A highly recommended way to meet these requirements is to use a given template (LibreOffice, Microsoft Word® or L A TEX) and check details against the corresponding example PDF file. Given templates, Microsoft Word\textregistered\ or \LaTeX, can be adapted/imported easily in other software such as LibreOffice, Apple Pages, Lua\LaTeX, and Xe\LaTeX, but please be careful to match the layout of the provided PDF example.
+Simpler approaches such as direct clustering of unlabelled speech has also been shown to perform well \parencite{chen2015parallel}.
+This work seeks to find whether it is possible to combine the two approaches, by first inferring a probabilistic model from unlabelled speech, and afterwards improving on this model using speech fragment information.
+This approach is similar to the one of \textcite{jansen2013weak}, where a universal background model in the form of a Gaussian mixture model is inferred and later partitioned, with the difference that the partitioning is done approximately using a linear siamese model inspired by \textcite{synnaeve2014phonetics}, taking advantage of both same-class and different-class fragment information.
 
-\subsection{Basic layout features}
+\subsection{Objective}
+This work seeks to find speaker-invariant speech features which can be used to discriminate between different linguistic units in a robust manner.
+We focus in particular on simpler, interpretable models that improve on features inferred from unlabelled data, thus also making use of the full set of unlabelled data, in addition to speech fragment information.
+The goal is for the model to noticably improve on the input features, as well as to achieve competitive results in the context of the first track of the Zero Resource Speech Challenge.
 
-\begin{itemize}
-\item Proceedings will be printed in DIN A4 format. Authors must submit their papers in DIN A4 format.
-\item Two columns are used except for the title section and for large figures that may need a full page width.
-\item Left and right margin are 20 mm each. 
-\item Column width is 80 mm. 
-\item Spacing between columns is 10 mm.
-\item Top margin is 25 mm (except for the first page which is 30 mm to the title top).
-\item Bottom margin is 35 mm.
-\item Text height (without headers and footers) is maximum 235 mm.
-\item Headers and footers must be left empty.
-\item Check indentations and spacings by comparing to this example file (in PDF).
-\end{itemize}
+\subsection{Related work}
 
-\subsubsection{Headings}
+This \namecref{ch:related-work} provides a brief overview of recent research into unsupervised acoustic modelling.
+The approaches discussed here can broadly be divided into two categories: bottom-up approaches that infer the acoustic model directly from the speech frames, and top-down approaches that first segment the speech into syllable- or word-like units, and afterwards try break these units into smaller subword units.
 
-Section headings are centered in boldface with the first word capitalized and the rest of the heading in lower case. Sub- headings appear like major headings, except they start at the left margin in the column. Sub-sub-headings appear like sub-headings, except they are in italics and not boldface. See the examples in this file. No more than 3 levels of headings should be used.
+\subsubsection{Bottom-up approaches}
 
-\subsection{Text font}
+As an individual speech frame only make up a fraction of a complete speech sound, it is natural to model and segment the speech using a model that can capture time dependencies, such as a hidden Markov model (HMM), rather than attempt to cluster the speech frames directly.
+One issue with this approach, however, is that the number of possible states (i.e.\ subword units) is unknown a priori.
 
-Times or Times Roman font is used for the main text. Font size in the main text must be 9 points, and in the References section 8 points. Other font types may be used if needed for special purposes. It is VERY IMPORTANT that while making the final PDF file, you embed all used fonts!
+\textcite{varadarajan2008unsupervised} tackle this problem by first defining a one-state HMM, and then iteratively splitting and merging states as needed to account for the data according to a heuristic.
+Training stops once the size of the HMM reaches a threshold.
+After training, each state in the HMM can be thought to correspond to some allophone (context-dependent variant realisation) of a phoneme.
+It should be noted, however, that in order to interpret a given state sequence as a single phoneme, \citeauthor{varadarajan2008unsupervised} train a separate model using labelled speech to perform this mapping.
+The method is thus not fully unsupervised.
 
-\LaTeX users: users should use Adobe Type 1 fonts such as Times or Times Roman. These are used automatically by the INTERSPEECH\_v2.sty style file. Authors must not use Type 3 (bitmap) fonts.
+\textcite{lee2012nonparametric} take a fully probabilistic approach, defining a model that jointly performs segmentation and acoustic modelling.
+An infinite mixture model of tri-state HMM-GMMs modelling subword units is defined using the Dirichlet process, and latent variables representing segment boundaries are introduced.
+The data can be thought to be generated by repeatedly sampling an HMM to model a segment, sampling a path through the HMM, and for each state in the path sampling a feature vector from the corresponding GMM.
+The probability of transitioning from one unit to another is thus not modelled.
+Inference of the model is done using Gibbs sampling.
 
-\subsection{Figures}
+\textcite{siu2014unsupervised} use an HMM of a more classic form to model the data.
+An initial transcription of the data in terms of state labels is first generated in an unsupervised manner using a segmental GMM (SGMM).
+The HMM and transcription are then iteratively updated, maximising the probability of the model parameters given the transcription, and the transcription given the model parameters.
+Note that the number of allowed states are here defined in advance.
+$n$-gram statistics are then collected from the transcription and used for tasks such as unsupervised keyword discovery.
 
-All figures must be centered on the column (or page, if the figure spans both columns). Figure captions should follow each figure and have the format given in Figure~\ref{fig:speech_production}.
+Diverging from previous approaches using temporal models, \textcite{chen2015parallel} perform standard clustering of speech frames using an infinite Gaussian mixture model.
+After training, the speech frames are represented as posteriorgrams, which have been shown to be more speaker-invariant than other features such as MFCCs \parencite{zhang2010towards}.
+Despite the simple approach, this turned out to be the overall best-performing model in the first track of the 2015 Zero Resource Speech Challenge \parencite{versteegh2016zero}.
+\textcite{heck2016unsupervised} later further improved on the model by performing clustering in two stages, with an intermediate supervised dimensionality reduction step using the clusters derived from the first clustering step as target classes.
 
-Figures should be preferably line drawings. If they contain gray levels or colors, they should be checked to print well on a high-quality non-color laser printer.
+\textcite{synnaeve2016temporal} use a siamese network to create an embedding where speech frames close to each other are considered to belong to the same subword unit, while distant speech frames are said to differ.
+A siamese network is a feedforward neural network that takes two inputs and adjusts its parameters to either maximise or minimise the similarity of the corresponding outputs \parencite{bromley1994signature}.
 
-Graphics (i.\,e., illustrations, figures) must not use stipple fill patterns because they will not reproduce properly in Adobe PDF. Please use only SOLID FILL COLORS.
+\subsubsection{Top-down approaches}
+\todo[inline]{remove information already included in the introduction}
 
-Figures which span 2 columns (i.\,e., occupy full page width) must be placed at the top or bottom of the page.
+Top-down approaches start by first finding pairs of longer word-like segments using unsupervised term discovery (UTD).
+This information provides constraints that can be use to find speech frame representations that are more stable within a given subword unit.
+The rationale is that while at the frame level the same speech sound can seem quite different between different speakers or even different realisations of the sound by the same speaker, patterns over a longer duration of time are easier to identify; this idea is illustrated in \textcite{jansen2013weak}.
 
-\subsection{Tables}
+The UTD systems used in this context are generally based on the segmental dynamic time warping (S-DTW) developed by \textcite{park2008unsupervised}.
+S-DTW works by repeatedly performing DTW on two audio streams while constraining the maximum amount of warping allowed, each time changing the starting point of the DTW in both streams.
+This yields a set of alignments, from which the stretches of lowest average dissimilarity in each alignment can be extracted.
+Unfortunately, this approach is inherently $O(n^2)$ in time.
+To remedy this, \textcite{jansen2011efficient} introduced an approximate version that uses binary approximations of the feature vectors to perform the calculations in $O(n \log n)$ time using sparse similarity matrices; this system also serves as the baseline for the second track of the Zero Resource Speech Challenge \parencite{versteegh2015zero}.
 
-An example of a table is shown in Table~\ref{tab:example}. The caption text must be above the table.
+\textcite{jansen2011towards} describe a method for finding subword units, assuming that clusters corresponding to words, each cluster containing multiple examples of that word in the form of audio, are given.
+For each word, an HMM is trained on all the corresponding examples, the number of states in the model being set to a number proportional to the average duration of the word.
+The states from each HMM are then collected and clustered based on the similarity of their distributions, forming clusters that hopefully correspond to subword units.
 
-\begin{table}[th]
-  \caption{This is an example of a table}
-  \label{tab:example}
-  \centering
-  \begin{tabular}{ r@{}l  r }
-    \toprule
-    \multicolumn{2}{c}{\textbf{Ratio}} & 
-                                         \multicolumn{1}{c}{\textbf{Decibels}} \\
-    \midrule
-    $1$                       & $/10$ & $-20$~~~             \\
-    $1$                       & $/1$  & $0$~~~               \\
-    $2$                       & $/1$  & $\approx 6$~~~       \\
-    $3.16$                    & $/1$  & $10$~~~              \\
-    $10$                      & $/1$  & $20$~~~              \\
-    $100$                     & $/1$  & $40$~~~              \\
-    $1000$                    & $/1$  & $60$~~~              \\
-    \bottomrule
-  \end{tabular}
-  
-\end{table}
+\textcite{jansen2013weak} take somewhat of an inverse approach, starting by clustering the whole data on a frame level, with the assumption that each cluster will tend to correspond to some speaker- or context-dependent subword unit.
+They then look at pairs of word-like segments known to be of the same type and calculate how often clusters tend to co-occurr.
+The clusters are then partitioned so that clusters that co-occurr often are placed in the same partition.
 
-\subsection{Equations}
+\textcite{synnaeve2014phonetics} introduce a neural network known referred to as the ABnet, based on siamese networks \parencite{bromley1994signature}.
+The network takes a pair of speech frames as input, and adjusts its parameters so that the outputs are collinear if the inputs are known to correspond to the same subword unit, and orthogonal otherwise, using a cosine-based loss function.
+\textcite{thiolliere2015hybrid} made use of this approach in the Zero Resource Speech Challenge, also incorporating unsupervised term discovery so as to make the whole process unsupervised, yielding competitive results \parencite{versteegh2016zero}.
+\textcite{zeghidour2016deep} experiment with supplying the ABnet with scattering spectrum features instead of filter bank features, showing that with the right features, a shallow architecture may outperform a deep architecture, especially when the amount of available data is low.
 
-Equations should be placed on separate lines and numbered. Examples of equations are given below. Particularly,
-% 
-\begin{equation}
-  x(t) = s(f_\omega(t))
-  \label{eq1}
-\end{equation}
-% 
-where \(f_\omega(t)\) is a special warping function
-% 
-\begin{equation}
-  f_\omega(t) = \frac{1}{2 \pi j} \oint_C 
-  \frac{\nu^{-1k} \mathrm{d} \nu}
-  {(1-\beta\nu^{-1})(\nu^{-1}-\beta)}
-  \label{eq2}
-\end{equation}
-% 
-A residue theorem states that
-% 
-\begin{equation}
-  \oint_C F(z)\,\mathrm{d}z = 2 \pi j \sum_k \mathrm{Res}[F(z),p_k]
-  \label{eq3}
-\end{equation}
-% 
-Applying (\ref{eq3}) to (\ref{eq1}), it is straightforward to see that
-% 
-\begin{equation}
-  1 + 1 = \pi
-  \label{eq4}
-\end{equation}
+\textcite{kamper2015unsupervised} use an autoencoder-like structure, where a neural network is trained to ``reconstruct'' a frame given another frame known to be of the same type.
+\textcite{renshaw2015comparison} used this architecture in the Zero Resource Speech Challenge, albeit with a deeper decoder.
 
-Finally we have proven the secret theorem of all speech sciences. No more math is needed to show how useful the result is!
+\subsection{This thesis}
+\todo[inline]{make description more application agnostic?}
 
-\begin{figure}[t]
-  \centering
-  here is a picture
+Two of the most successful approaches so far are the clustering approach of \textcite{chen2015parallel} and the siamese network approach of \textcite{thiolliere2015hybrid}.
+We pose the question of whether it is possible to combine the two approaches by first clustering the data in an unsupervised manner using a probabilistic model, and then improving the resulting posteriorgrams using speech fragment information.
+This way we are able to take advantage of both the whole unlabelled data set, and the smaller set of discovered fragments.
 
-  \caption{Schematic diagram of speech production.}
-  \label{fig:speech_production}
-\end{figure}
+Many probabilistic models, such as Gaussian mixture models and hidden Markov models, have a concept of latent states or classes.
+We pose the problem of improving posteriorgrams from such a model as one of merging, or partitioning, these classes.
+By first training the model in a fully unsupervised manner, it learns classes that can generally be assumed to be highly speaker-specific.
+We can then use weak supervision to merge these classes, yielding representations that are more speaker invariant.
 
-\subsection{Information for Word users only}
-
-For ease of formatting, please use the styles listed in Table 2. The styles are defined in this template file and are shown in the order in which they would be used when writing a paper. When the heading styles in Table 2 are used, section numbers are no longer required to be typed in because they will be automatically numbered by Word. Similarly, reference items will be automatically numbered by Word when the ``Reference'' style is used.
-
-\begin{table}[t]
-  \caption{Main predefined styles in Word}
-  \label{tab:word_styles}
-  \centering
-  \begin{tabular}{ll}
-    \toprule
-    \textbf{Style Name}      & \textbf{Entities in a Paper}                \\
-    \midrule
-    Title                    & Title                                       \\
-    Author                   & Author name                                 \\
-    Affiliation              & Author affiliation                          \\
-    Email                    & Email address                               \\
-    AbstractHeading          & Abstract section heading                    \\
-    Body Text                & First paragraph in abstract                 \\
-    Body Text Next           & Following paragraphs in abstract            \\
-    Index                    & Index terms                                 \\
-    1. Heading 1             & 1\textsuperscript{st} level section heading \\
-    1.1 Heading 2            & 2\textsuperscript{nd} level section heading \\
-    1.1.1 Heading 3          & 3\textsuperscript{rd} level section heading \\
-    Body Text                & First paragraph in section                  \\
-    Body Text Next           & Following paragraphs in section             \\
-    Figure Caption           & Figure caption                              \\
-    Table Caption            & Table caption                               \\
-    Equation                 & Equations                                   \\
-    \textbullet\ List Bullet & Bulleted lists                              \\\relax
-    [1] Reference            & References                                  \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
-If your Word document contains equations, you must not save your Word document from ``.docx'' to ``.doc'' because when doing so, Word will convert all equations to images of unacceptably low resolution.
-
-\subsection{Hyperlinks}
-
-For technical reasons, the proceedings editor will strip all active links from the papers during processing. Hyperlinks can be included in your paper, if written in full, e.\,g.\ ``http://www.foo.com/index.html''. The link text must be all black. 
-Please make sure that they present no problems in printing to paper.
-
-\subsection{Multimedia files}
-
-The INTERSPEECH organizing committee offers the possibility to submit multimedia files. These files are meant for audio-visual illustrations that cannot be conveyed in text, tables and graphs. Just like you would when including graphics, make sure that you have sufficient author rights to the multimedia materials that you submit for publication. The proceedings media will NOT contain readers or players, so be sure to use widely accepted file formats, such as MPEG, Windows WAVE PCM (.wav) or Windows Media Video (.wmv) using standard codecs.
-
-Your multimedia files must be submitted in a single ZIP file for each separate paper. Within the ZIP file you can use folders and filenames to help organize the multimedia files. In the ZIP file you should include a TEXT or HTML index file which describes the purpose and significance of each multimedia file. From within the manuscript, refer to a multimedia illustration by its filename. Use short file names without blanks for clarity.
-
-The ZIP file you submit will be included as-is in the proceedings media and will be linked to your paper in the navigation interface of the proceedings. Causal Productions (the publisher) and the conference committee will not check or change the contents of your ZIP file.
-
-Users of the proceedings who wish to access your multimedia files will click the link to the ZIP file which will then be opened by the operating system of their computer. Access to the contents of the ZIP file will be governed entirely by the operating system of the user's computer.
-
-\subsection{Page numbering}
-
-Final page numbers will be added later to the document electronically. \emph{Don't make any footers or headers!}
-
-
-\subsection{References}
-
-The reference format is the standard IEEE one. References should be numbered in order of appearance, for example \cite{Davis80-COP}, \cite{Rabiner89-ATO}, \cite[pp.\ 417--422]{Hastie09-TEO}, and \cite{YourName17-XXX}.
-
-\subsection{Abstract}
-
-The total length of the abstract is limited to 200 words. The abstract included in your paper and the one you enter during web-based submission must be identical. Avoid non-ASCII characters or symbols as they may not display correctly in the abstract book.
-
-\subsection{Author affiliation}
-
-Please list country names as part of the affiliation for each country.
-
-\subsection{Submitted files}
-
-Authors are requested to submit PDF files of their manu­scripts. You can use commercially available tools or for instance http://www.pdfforge.org/products/pdfcreator. The PDF file should comply with the following requirements: (a) there must be no PASSWORD protection on the PDF file at all; (b) all fonts must be embedded; and (c) the file must be text searchable (do CTRL-F and try to find a common word such as ‘the’). The proceedings editors (Causal Productions) will contact authors of non-complying files to obtain a replacement. In order not to endanger the preparation of the proceedings, papers for which a replacement is not provided timely will be withdrawn.
+A partitioning of classes can be viewed as a surjection from the original set of classes to a class set of lower cardinality, but finding this surjection is a discrete problem which is difficult to optimise for.
+However, a benefit of posteriorgrams is that the probability of an output class can be described as a simple sum of the probabilities of the classes that map to the class in question.
+This means that the surjection can be approximated using a continuous linear model which can be optimised through standard gradient descent.
+A linear model also has the added benefit of being more interpretable than deep networks such as that of \textcite{thiolliere2015hybrid}.
+While the approach of partitioning posteriorgrams is very reminiscent of \textcite{jansen2013weak}, the major difference is that in place of direct clustering of classes, we are instead trying to maximise the similarity/dissimilarity between pairs of speech fragments, which only indirectly results in a partitioning of the classes.
 
 
 %%% Local Variables: 
