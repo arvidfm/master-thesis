@@ -1,9 +1,9 @@
 \section{Method}
 \label{sec:method}
+% Arvid: check that I am not getting this wrong
+The goal of our method is to merge acoustic clusters obtained by bottom-up unsupervised classification such that the resulting classes correspond more closely to phonemic units in the language.
 
-This \namecref{ch:methods} describes the shallow siamese network used to find an approximate class-merging surjection.
 
-\section{Model}
 We take as input a set $\{(\mat x_i, \mat y_i)\}_{i=1}^N$ of $N$ pairs of $M$-dimensional posteriorgrams, i.e.\ (row) vectors of probabilities such that the probabilities sum to one.
 Additionally, we have a set of indicators $\{c_i\}_{i=1}^N$ such that $c_i$ is $1$ if $\mat x_i$ and $\mat y_i$ belong to the same class, and $0$ otherwise.
 The posteriorgrams are taken to represent a distribution over $M$ discrete ``pseudo''-classes (e.g.\ allophones), where several pseudo-classes together describe a single ``true'' class (e.g.\ phonemes).
@@ -52,7 +52,7 @@ The loss function over a minibatch $B$ is given by the average
 \end{equation}
 which is minimised with respect to $\mat V$.
 
-\section{Loss function}
+\subsection{Loss function}
 
 As the output of the model is a probability distribution, it makes intuitive sense to use a statistical divergence as a measure of similarity.
 Perhaps the most well-known divergence is the Kullback-Leibler (KL) divergence, defined as:
@@ -81,7 +81,7 @@ Thus, we define the loss function as
 \end{equation}
 thereby minimising the root JS divergence between pairs belonging to the same class, and maximising the divergence between pairs belonging to different classes\footnote{For identical or near-identical $\mat x$ and $\mat y$, the JS divergence may become negative due to rounding errors caused by limited floating point precision; this can be counteracted by adding a small constant value before taking the square root.}.
 
-\section{Entropy penalty}
+\subsection{Entropy penalty}
 
 To make the output of the model interpretable, it is desirable to ensure that for a given input, only one output unit is active.
 This can be done by introducing an entropy penalty, which attempts to minimise the spread of the probability mass.
