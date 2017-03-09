@@ -14,15 +14,16 @@
 % with this program; if not, write to the Free Software Foundation, Inc.,
 % 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
-\todo[inline]{unit of energy?}
 \begin{tikzpicture}
   \begin{groupplot}[group style={group size=2 by 1,horizontal sep=2cm},width=5cm]
   \nextgroupplot[
-    axis y line=none,
+    axis y line=left,
     axis x line=bottom,
+    ytick=\empty,
     ymax=10000,
     ymin=-8000,
     xlabel={Time (\si{\s})},
+    ylabel={Amplitude},
     title={Time domain},
     xtick={0, 0.1, 0.2, 0.3}
   ]
@@ -34,7 +35,8 @@
     xmax=8000,
     title={Frequency domain},
     xlabel={Frequency (\si{\Hz})},
-    ylabel={Energy}
+    ylabel={Energy (\si{\dB})},
+    ytick=\empty
   ]
   \addplot[blue] table[y=energy] {data/spectrum.txt};
   \addplot[red,very thick,dashed] table[y=envelope] {data/spectrum.txt};
