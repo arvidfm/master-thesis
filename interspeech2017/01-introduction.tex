@@ -1,62 +1,56 @@
 \section{Introduction}
 \label{sec:introduction}
-%Automatic speech recognition (ASR) is generally framed as a supervised task, where both audio data and the corresponding transcription is available, and the problem is to develop a model that can mimic this mapping from speech to text.
-%However, developing such data is expensive, both in terms of time and money, as it involves painstakingly transcribing many hours of speech and aligning the transcription in time by hand.
-%As a result, there is a notable lack of high-quality data for speech recognition for a majority of languages around the world.
-%An important question is thus whether it is possible to make use of untranscribed, or unlabelled, data to develop ASR for such low-resource languages.
-%Unsupervised learning in this manner may also provide insight into the linguistic structure of languages, or the language acquisition of infants.
+The area of unsupervised learning in speech technology has been active for many decades in the attempt to reduce the amount of handcrafted information needed to build speech recognition and synthesis systems.
+Many aspects of language acquisition have been covered, from the discovery of alternative sub-word units compared to pre-defined phonemes \parencite{LeeEtAl1988,SvendsenEtAl1989,BacchianiEtAl1996,Huijbregts, OGrady:2008up} to the discovery of recurrent patterns that may constitute word candidates \cite{Rasanen2011149, ParkAndGlass2008, Aimetti2010, StoutenEtAl2008phonepatterns, DriesenEtAl2009adaptivenon-negative, gs:VanhainenAndSalvi2012Interspeech, gs:VanhainenAndSalvi2014ICASSP}.
+Recently, \citeauthor{versteegh2015zero} introduced the Zero Resource Speech Challenge \parencite{versteegh2015zero}, which was developed with the goal of standardising these endeavours.
+Specifically, the first track, most relevant to this paper, involves finding speaker independent linguistic units from speech with no or weak supervision.
+The discovery of linguistic units follows two main approaches in the literature that we will here refer to as bottom-up and top-down. 
+In the first case, acoustic models are inferred directly from the acoustic features \parencite{varadarajan2008unsupervised, lee2012nonparametric, siu2014unsupervised, chen2015parallel, zhang2010towards, versteegh2016zero, heck2016unsupervised, synnaeve2016temporal}.
+The second approach is to first segment the speech into syllable- or word-like units, and afterwards break these units into smaller subword units \parencite{jansen2013weak, park2008unsupervised, jansen2011efficient, versteegh2015zero, jansen2011towards, jansen2013weak, synnaeve2014phonetics, thiolliere2015hybrid, versteegh2016zero, zeghidour2016deep, kamper2015unsupervised, renshaw2015comparison}
+%The motivation for taking this top-down approach is that sounds that in reality correspond to the same linguistic unit may seem very different when inspecting speech at specific time instances, especially when comparing different speakers.
+%One approach that has proved itself successful in modelling linguistic units is to first discover recurring speech fragments, and then use these fragments as constraints to construct features where speech frames corresponding to the same sound are similar \parencite{synnaeve2014phonetics,thiolliere2015hybrid}.
+%One motivation for taking this top-down approach is that sounds that in reality correspond to the same linguistic unit may seem very different when inspecting speech at specific time instances, especially when comparing different speakers; however, when viewed at a larger time scale, patterns from e.g.\ recurring words are easier to find \parencite{jansen2013weak}.
 
-% in the parencite below I plan to collect citations from earlier times (there are many papers already from the '80s)
-The area of unsupervised learning in speech technology has been active for many decades in the attempt to reduce the amount of handcrafted information needed to build speech recognition and synthesis systems. Many aspects of language acquisition have been covered, from the discovery alternative sub-word units compared to pre-defined phonemes \parencite{LeeEtAl1988,SvendsenEtAl1989,BacchianiEtAl1996,Huijbregts, OGrady:2008up} to the discovery of recurrent patterns that may constitute word candidates \cite{Rasanen2011149, ParkAndGlass2008, Aimetti2010, StoutenEtAl2008phonepatterns, DriesenEtAl2009adaptivenon-negative}.
-\citeauthor{versteegh2015zero} recently introduced the Zero Resource Speech Challenge \parencite{versteegh2015zero}, which was developed with the goal of standardising these endeavours. %finding linguistic units (track 1) or longer recurring word-like fragments (track 2) in speech.
-%Models are to be trained using only speech data, voice activity information, and speaker identity information.
-%In the spirit of the Zero Resource Speech Challenge, this thesis will follow the first track of the challenge, using the same training data and evaluation procedure.
+%Simpler approaches such as direct clustering of unlabelled speech has also been shown to perform well \parencite{chen2015parallel}.
+%This work seeks to find whether it is possible to combine the two approaches, by first inferring a probabilistic model from unlabelled speech, and afterwards improving on this model using speech fragment information.
+%This approach is similar to the one in \parencite{jansen2013weak}, where a universal background model in the form of a Gaussian mixture model is inferred and later partitioned, with the difference that the partitioning is done approximately using a linear siamese model inspired by \parencite{synnaeve2014phonetics}, taking advantage of both same-class and different-class fragment information.
 
-One approach that has proved itself successful in modelling linguistic units is to first discover recurring speech fragments, and then use these fragments as constraints to construct features where speech frames corresponding to the same sound are similar \parencite{synnaeve2014phonetics,thiolliere2015hybrid}.
-One motivation for taking this top-down approach is that sounds that in reality correspond to the same linguistic unit may seem very different when inspecting speech at specific time instances, especially when comparing different speakers; however, when viewed at a larger time scale, patterns from e.g.\ recurring words are easier to find \parencite{jansen2013weak}.
+\subsection{Related Work: Bottom-Up Approaches}
 
-Simpler approaches such as direct clustering of unlabelled speech has also been shown to perform well \parencite{chen2015parallel}.
-This work seeks to find whether it is possible to combine the two approaches, by first inferring a probabilistic model from unlabelled speech, and afterwards improving on this model using speech fragment information.
-This approach is similar to the one in \parencite{jansen2013weak}, where a universal background model in the form of a Gaussian mixture model is inferred and later partitioned, with the difference that the partitioning is done approximately using a linear siamese model inspired by \parencite{synnaeve2014phonetics}, taking advantage of both same-class and different-class fragment information.
+%Approaches to unsupervised acoustic modelling can broadly be divided into two categories: bottom-up methods that infer the acoustic model directly from the speech frames, and top-down methods that first segment the speech into syllable- or word-like units, and afterwards try break these units into smaller subword units.
 
-\subsection{Related work}
+%\subsubsection{Bottom-up approaches}
 
-Approaches to unsupervised acoustic modelling can broadly be divided into two categories: bottom-up methods that infer the acoustic model directly from the speech frames, and top-down methods that first segment the speech into syllable- or word-like units, and afterwards try break these units into smaller subword units.
+%As an individual speech frame only make up a fraction of a complete speech sound, it is natural to model and segment the speech using a model that can capture time dependencies, such as a hidden Markov model (HMM), rather than attempt to cluster the speech frames directly.
+%One issue with this approach, however, is that the number of possible states (i.e.\ subword units) is unknown a priori.
 
-\subsubsection{Bottom-up approaches}
-
-As an individual speech frame only make up a fraction of a complete speech sound, it is natural to model and segment the speech using a model that can capture time dependencies, such as a hidden Markov model (HMM), rather than attempt to cluster the speech frames directly.
-One issue with this approach, however, is that the number of possible states (i.e.\ subword units) is unknown a priori.
-
-\textcite{varadarajan2008unsupervised} tackle this problem by first defining a one-state HMM, and then iteratively splitting and merging states as needed to account for the data according to a heuristic.
-Training stops once the size of the HMM reaches a threshold.
-After training, each state in the HMM can be thought to correspond to some allophone (context-dependent variant realisation) of a phoneme.
-It should be noted, however, that in order to interpret a given state sequence as a single phoneme, \citeauthor{varadarajan2008unsupervised} train a separate model using labelled speech to perform this mapping.
-The method is thus not fully unsupervised.
-
-\textcite{lee2012nonparametric} take a fully probabilistic approach, defining a model that jointly performs segmentation and acoustic modelling.
-An infinite mixture model of tri-state HMM-GMMs modelling subword units is defined using the Dirichlet process, and latent variables representing segment boundaries are introduced.
-The data can be thought to be generated by repeatedly sampling an HMM to model a segment, sampling a path through the HMM, and for each state in the path sampling a feature vector from the corresponding GMM.
-The probability of transitioning from one unit to another is thus not modelled.
+\textcite{varadarajan2008unsupervised} first define a one-state HMM, and then iteratively split and merge states as needed to account for the data according to a heuristic.
+%They finally interpret every state as an allophone.
+%Training stops once the size of the HMM reaches a threshold.
+%After training, each state in the HMM can be thought to correspond to some allophone (context-dependent variant realisation) of a phoneme.
+It should be noted, however, that in order map each state (allophones) into phonemes, they train a separate model using labelled speech, making the method not fully unsupervised.
+\textcite{lee2012nonparametric} use an infinite mixture model of tri-state HMM-GMMs that performs segmentation and acoustic modelling joinly.
+%An infinite mixture model of tri-state HMM-GMMs modelling subword units is defined using the Dirichlet process, and latent variables representing segment boundaries are introduced.
+%The data can be thought to be generated by repeatedly sampling an HMM to model a segment, sampling a path through the HMM, and for each state in the path sampling a feature vector from the corresponding GMM.
+%The probability of transitioning from one unit to another is thus not modelled.
 Inference of the model is done using Gibbs sampling.
-
-\textcite{siu2014unsupervised} use an HMM of a more classic form to model the data.
-An initial transcription of the data in terms of state labels is first generated in an unsupervised manner using a segmental GMM (SGMM).
-The HMM and transcription are then iteratively updated, maximising the probability of the model parameters given the transcription, and the transcription given the model parameters.
+A similar model but, without constraints on the topology of the HMMs was studied in \parencite{gs:VanhainenAndSalvi2014ICASSP}.
+\textcite{siu2014unsupervised} first use a segmental GMM (SGMM) to generate a transcription of the data and then iteratively train a standard HMM and improve the transcriptions by, in turns, maximising the likelihood of the model parameters given the transcription, and the transcription given the model parameters.
+% use an HMM of a more classic form to model the data.
+%An initial transcription of the data in terms of state labels is first generated in an unsupervised manner using a segmental GMM (SGMM).
+%The HMM and transcription are then iteratively updated, maximising the probability of the model parameters given the transcription, and the transcription given the model parameters.
 Note that the number of allowed states are here defined in advance.
-$n$-gram statistics are then collected from the transcription and used for tasks such as unsupervised keyword discovery.
+%$n$-gram statistics are then collected from the transcription and used for tasks such as unsupervised keyword discovery.
 
 Diverging from previous approaches using temporal models, \textcite{chen2015parallel} perform standard clustering of speech frames using an infinite Gaussian mixture model.
 After training, the speech frames are represented as posteriorgrams, which have been shown to be more speaker-invariant than other features such as MFCCs \parencite{zhang2010towards}.
 Despite the simple approach, this turned out to be the overall best-performing model in the first track of the 2015 Zero Resource Speech Challenge \parencite{versteegh2016zero}.
-\textcite{heck2016unsupervised} later further improved on the model by performing clustering in two stages, with an intermediate supervised dimensionality reduction step using the clusters derived from the first clustering step as target classes.
+\textcite{heck2016unsupervised} further improved on the model by performing clustering in two stages, with an intermediate supervised dimensionality reduction step using the clusters derived from the first clustering step as target classes.
 
-\textcite{synnaeve2016temporal} use a siamese network to create an embedding where speech frames close to each other are considered to belong to the same subword unit, while distant speech frames are said to differ.
-A siamese network is a feedforward neural network that takes two inputs and adjusts its parameters to either maximise or minimise the similarity of the corresponding outputs \parencite{bromley1994signature}.
+\textcite{synnaeve2016temporal} use a siamese network \parencite{bromley1994signature} to create an embedding where speech frames close to each other are considered to belong to the same subword unit, while distant speech frames are said to differ.
+%A siamese network is a feedforward neural network that takes two inputs and adjusts its parameters to either maximise or minimise the similarity of the corresponding outputs \parencite{bromley1994signature}.
 
-\subsubsection{Top-down approaches}
-\todo[inline]{remove information already included in the introduction}
-
+\subsection{Related Work: Top-Down Approaches}
 Top-down approaches start by first finding pairs of longer word-like segments using unsupervised term discovery (UTD).
 This information provides constraints that can be use to find speech frame representations that are more stable within a given subword unit.
 The rationale is that while at the frame level the same speech sound can seem quite different between different speakers or even different realisations of the sound by the same speaker, patterns over a longer duration of time are easier to identify; this idea is illustrated in \textcite{jansen2013weak}.
@@ -83,7 +77,7 @@ The network takes a pair of speech frames as input, and adjusts its parameters s
 \textcite{kamper2015unsupervised} use an autoencoder-like structure, where a neural network is trained to ``reconstruct'' a frame given another frame known to be of the same type.
 \textcite{renshaw2015comparison} used this architecture in the Zero Resource Speech Challenge, albeit with a deeper decoder.
 
-\subsection{This thesis}
+\subsection{This Work}
 \todo[inline]{make description more application agnostic?}
 
 Two of the most successful approaches so far are the clustering approach of \textcite{chen2015parallel} and the siamese network approach of \textcite{thiolliere2015hybrid}.
