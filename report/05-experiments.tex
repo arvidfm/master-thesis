@@ -16,6 +16,7 @@
 
 \chapter{Experiments}
 \label{ch:experiments}
+\todo[inline]{figure with audio + transcription + posteriorgrams?}
 
 This chapter describes the application of the model described in \cref{ch:methods} to the task of unsupervised modelling of speech, and in particular the use of the model to improve posteriorgrams generated from a Gaussian mixture model.
 First the experimental setup is described, including the data used, the how the data is processed, and how the models are implemented.
@@ -24,13 +25,14 @@ Finally, the models are evaluated using the minimal-pair ABX task.
 
 \section{Experimental setup}
 \subsection{Data}
-The 2015 Zero Resource Speech Challenge makes use of two corpora: The Buckeye corpus of conersational English \parencite{buckeyecorpus} and the NCHLT speech corpus of read Xitsonga \parencite{barnard2014nchlt}.
+We evaluate our method using the data used by the 2015 Zero Resource Speech Challenge in the context of unsupervised learning of speech units.
+The challenge makes use of two corpora: The Buckeye corpus of conersational English \parencite{buckeyecorpus} and the NCHLT speech corpus of read Xitsonga \parencite{barnard2014nchlt}.
 For the challenge only a subset of the data is used, consisting of 12 speakers for a total of 5 hours of data for the Buckeye corpus, and 24 speakers for a total of 2.5 hours of data for the NCHLT Xitsonga corpus.
 Additionally provided is voice activity information indicating segments containing clean speech, as well as labels indicating the identity of the speaker.
 
 \subsection{Generating the posteriorgrams}
 \label{sec:posteriorgrams}
-MFCCs features were extracted from the data using a frame window length \SI{25}{\ms} which was shifted \SI{10}{ms} for each frame, an FFT resolution of 512 frequency steps, and 40 mel-spaced triangular filter banks.
+MFCCs features were extracted from the data using a frame window length of \SI{25}{\ms} which was shifted \SI{10}{ms} for each frame, an FFT resolution of 512 frequency steps, and 40 mel-spaced triangular filter banks.
 13 coefficients with both delta and delta-delta features were used.
 The MFCCs corresponding to segments with voice activity were clustered using an implementation of a Gaussian mixture model (GMM) provided by scikit-learn \parencite{scikit-learn}.
 The GMM was trained using the expectation maximisation algorithm, using $M = 1024$ Gaussians with diagonal covariance matrices, for a maximum of 200 iterations.
@@ -40,9 +42,9 @@ After training the posteriorgram for the $n$th frame is constructed as $\mat p_n
 \label{sec:utd}
 
 Pairs of similar speech fragments were discovered using the system developed by \textcite{jansen2011efficient}, which serves as a baseline for the second track of the Zero Resource Speech Challenge.
-The system works by calculating the approximate cosine similarity between pairs of frames of two input audio segments, based on discretised random projections of PLP features.
+The system works by calculating the approximate cosine similarity between pairs of frames of two input audio segments, based on discretised random projections of perceptual linear prediction (PLP) features.
 For efficiency only frames found using an approximate nearest neighbour search are compared, yielding a sparse similarity matrix.
-Stretches of similar frames are then found by searching for diagonals in the similarity matrix, which which are then aligned using dynamic time warping (DTW).
+Pairs of sequences of similar frames are found by searching for diagonals in the similarity matrix, which are then aligned using dynamic time warping (DTW).
 Pairs of segments with a DTW score above a certain threshold are kept and clustered based on pairwise DTW similarity, resulting in a set of clusters of speech segments, or fragments, thought to be of the same class (e.g.\ word).
 
 This process yielded 6512 fragments and 3149 clusters for the Buckeye corpus, and 3582 fragments and 1782 clusters for the NCHLT Xitsonga corpus\footnote{The cluster files used for this work were generously provided by Roland Thiollière and Aren Jansen.}.
@@ -101,7 +103,7 @@ For both corpora, the entropy drops quickly even for small $\lambda$, suggesting
 As the entropy penalty is increased, the entropy itself does not decrease; however, the different-class JS loss decreases at the expense of the same-class JS loss. \todo{why?}
 For future experiments, a penalty of $\lambda = 0.1$ is used.
 
-\section{Balancing same-class and different-class losses}
+\section{Rebalanced loss function}
 When enforcing low entropy in the output distribution, the resulting weight matrix becomes sparse.
 For instance, after training the model with $\lambda = 0.1$, and inspecting the row-normalised matrix $\mat W$, we find that the largest element on each row is close to 1: on average across the 1024 rows $0.98$ for English and $0.92$ for Xitsonga.
 We can thus inspect $\mat W$ to see how many of the $64$ outputs are actually being used by the model.
@@ -110,19 +112,9 @@ This sum describes roughly how many inputs are mapped to each output.
 We find that for both English and Xitsonga, this sum is above $0.5$ for only a minority of outputs: 11 outputs for English, and 10 outputs for Xitsonga.
 For English, where $\mat W$ is particularly sparse, none of the other 53 sums even reach $0.05$.
 
-Thus, it seems that the entropy penalty naturally encourages the model to make use of only a subset of the outputs.
+It seems that the entropy penalty naturally encourages the model to make use of only a subset of the outputs.
 However, the actual number of outputs used is not realistic in terms of how many phonemes one would expect to find in a language; it seems that the same-class loss is forcing too many input classes to merge.
-To solve this, we restate the Jensen-Shannon loss function, allowing us to specify how much relative weight to give to the same-class and different-class losses.
-Let $B_1 = \{i \in B : c_i = 1\}$ be the subset of same-class frame pairs in the current minibatch, and $B_0 = \{i \in B : c_i = 0\}$ the subset of different-class frame pairs.
-We then restate the loss as
-\begin{equation}
-  \label{eq:rebalanced}
-  \frac{1}{(\alpha + 1)|B_1|} \sum_{i \in B_1} L_{\mathrm{same}}(\mat V; \mat x_i, \mat y_i) + \frac{\alpha}{(\alpha + 1)|B_0|} \sum_{i \in B_0} L_{\mathrm{diff}}(\mat V; \mat x_i, \mat y_i),
-\end{equation}
-where $L_{\mathrm{same}}$ and $L_{\mathrm{diff}}$ are the same-class and different-class losses defined in \cref{eq:js-loss}.
-$\alpha$ is a hyperparameter specifying how much more to weight the different-class loss over the same-class loss.
-
-$\alpha$ needs to be carefully tuned: A too small $\alpha$ will cause too many input classes to merge, including classes that correspond to completely different phonemes, while a too large $\alpha$ will cause input classes that do correspond to the same phoneme to fail to merge.
+We therefore consider the restated loss of \cref{eq:rebalanced} so that more weight can be given to the different-class loss.
 In order to find a good value for $\alpha$, without making use of the gold transcription or prior knowledge of the number of phonemes present in the languages in question, we make use of the fragment clusters discovered by the unsupervised term discovery system.
 The intuition is that the goal of our model is to push apart different clusters, while keeping fragments within a cluster as similar as possible.
 To measure the success of our model, then, we can make use of a cluster separation measure.
@@ -141,7 +133,7 @@ We take the average of the $j$th column:
 \end{equation}
 This represents the average mapping to the $i$th output.
 As $\mat W$ is row-normalised, the elements of $Q = (q_1, q_2, \dots, q_D)$ sum to 1, and we can thus treat $Q$ as describing a probability distribution.
-A uniform distribution means that each output has the same number of inputs mapped to it.
+A uniform distribution ostensibly means that each output has the same number of inputs mapped to it, assuming a perfectly sparse weight matrix.
 Now consider the case where there are $K$ outputs such that the same number of inputs maps to each output, while no inputs map to any other outputs.
 The normalised entropy of $Q$ is then given by
 \begin{equation}
@@ -202,11 +194,11 @@ A value of $K$ close to $D$ is an indicator that all the outputs are being used 
 
 \Cref{fig:silhouette} shows the silhouette and spread for different values of $\alpha$.
 As one might expect, more emphasis on the different-class loss results in a higher spread, i.e.\ a larger number of output classes.
-The optimal value of $\alpha$ seems to be around 1.5 for both data sets, we use this value of $\alpha$ going forward.
+The optimal value of $\alpha$ seems to be around 1.5 for both data sets; we use this value of $\alpha$ going forward.
 
 \section{Discretising the model}
 \label{sec:discrete}
-As the resulting model is sparse, we can retrieve an exact surjection by discretising the model.
+As the resulting model is sparse, we can retrieve an exact mapping by discretising the model.
 We do this by for each row in $\mat W$ setting the largest element to $1$ and the remaining elements to $0$.
 Using the discretised model as a base, we additionally experiment with discretising the output distribution by setting the largest output to 1 and the rest to 0; this can be thought of as taking the argmax of the output distribution.
 
@@ -215,7 +207,7 @@ Using the discretised model as a base, we additionally experiment with discretis
 To get an idea of how the JS loss performs in general, we build a deep network with two hidden layers of $500$ sigmoid units each, with $64$ softmax outputs.
 The network is trained using the non-rebalanced JS loss.
 As softmax outputs are naturally sparse, we do not enforce any entropy penalty.
-For comparison we train the same architecture, albeit with sigmoid outputs instead, using the coscos$^2$ loss of \textcite{synnaeve2014phonetics}.
+For comparison we train the same architecture, albeit with 100 sigmoid outputs instead, using the coscos$^2$ loss of \textcite{synnaeve2014phonetics}.
 This is the architecture used by \textcite{thiolliere2015hybrid} in the 2015 Zero Resource Speech Challenge.
 
 As input to both networks we use the log-scale outputs of 40 mel-scaled filter banks.
@@ -224,44 +216,41 @@ The filter bank outputs are normalised over the whole data set to have zero mean
 Each frame is fed to the network with a context of 3 frames on both sides, for a total of 280 values used as input to the network.
 All fragments are DTW aligned and sampled as in \cref{sec:utd}.
 
-\section{Interpreting the model}
-
-\section{ABX evaluation}
+\section{ABX results}
 \begin{table}
  \centering
  \begin{tabular}{lrrrrrr} \toprule
    & \multicolumn{3}{c}{English} & \multicolumn{3}{c}{Xitsonga} \\ \cmidrule(lr){2-4} \cmidrule(lr){5-7}
     Model & Silhouette & Within & Across & Silhouette & Within & Across \\ \midrule
-    GMM posteriors & 0.008 & 12.313 & 23.841 & 0.066 & 11.434 & 23.181 \\
-    Non-rebalanced & 0.089 & 14.195 & 21.369 & 0.111 & 16.477 & 25.551 \\
-    Rebalanced & 0.108 & 12.770 & 19.831 & 0.146 & 13.990 & 23.202 \\
-    Discretised $\mat W$ & 0.124 & 12.013 & 19.261 & 0.170 & 12.702 & 21.888 \\
-    Discretised output & 0.010 & 16.513 & 24.565 & 0.014 & 19.404 & 29.150 \\
-    Deep JS & -0.370 & 22.376 & 28.233 & -0.320 & 18.190 & 24.759 \\
-    Deep coscos$^2$ & 0.187 & 12.294 & 19.561 & 0.174 & 11.934 & 19.052 \\ \bottomrule
+    GMM posteriors & 0.008 & 12.3 & 23.8 & 0.066 & 11.4 & 23.2 \\
+    Non-rebalanced & 0.089 & 14.2 & 21.4 & 0.111 & 16.5 & 25.6 \\
+    Rebalanced & 0.108 & 12.8 & 19.8 & 0.146 & 14.0 & 23.2 \\
+    Discretised $\mat W$ & 0.124 & 12.0 & 19.3 & 0.170 & 12.7 & 21.9 \\
+    Discretised output & 0.010 & 16.5 & 24.6 & 0.014 & 19.4 & 29.2 \\
+    Deep JS & -0.370 & 22.4 & 28.2 & -0.320 & 18.2 & 24.8 \\
+    Deep coscos$^2$ & 0.175 & 12.0 & 19.7 & 0.298 & 11.8 & 19.2 \\
+    \textcite{thiolliere2015hybrid} & --- & 12.0 & 17.9 & --- & 11.7 & 16.6 \\
+    \textcite{heck2016unsupervised} & --- & 10.6 & 16.0 & --- & 8.0 & 12.6 \\ \bottomrule
  \end{tabular}
 
- \caption{\label{tab:abx}Within-speaker and across-speaker ABX scores as well as the silhouette for the different models for both the English and Xitsonga data sets.
+ \caption{\label{tab:abx}Within-speaker and across-speaker ABX scores (lower is better) as well as the silhouette (higher is better) for the different models for both the English and Xitsonga data sets.
    GMM posteriors is the posteriorgrams extracted from the 1024-component Gaussian mixture model; non-rebalanced is the original loss presented in \cref{eq:original-loss}; rebalanced is the alternative loss presented in \cref{eq:rebalanced} with ${\alpha = 1.5}$; discretised $\mat W$ and discretised output are the models presented in \cref{sec:discrete}; and the deep models are those presented in \cref{sec:deep}.
    The silhouette is calculated on a subset of 1000 clusters for each language.
    All shallow models are trained with an entropy penalty of $\lambda = 0.1$.}
 \end{table}
 
-We evaluate the models discussed on the minimal-pair ABX task \parencite{schatz2013evaluating}.
-In the task we are presented with three speech fragments A, B and X, where A and B form minimal pairs, i.e.\ they only differ by a single phoneme.
-The task is to decide which of either A or B belongs to the same category as X.
-This is done by DTW-aligning A and B with X with respect to some underlying frame-based metric.
-The fragment closest to X according to the DTW score is chosen.
-The task takes two forms: within-speaker discriminability, where all fragments belong to the same speaker, and across-speaker discriminability, where A and B belong to one speaker while X belongs to another.
-
-The models are evaluated using a evaluation toolkit provided for the Zero Resource Speech Challenge.
+The models are evaluated using an evaluation toolkit provided for the 2015 Zero Resource Speech Challenge.
 The results are shown in \cref{tab:abx}, along with the silhouette for each model.
-The frame-based metric is chosen as the symmetrised Kullback-Leibler divergence (with the model output normalised as necessary), with the exception of the model with discretised output, which uses the cosine distance, which for one-hot vectors amounts to a distance of 0 for identical and 1 for non-identical vectors.
+The frame-based metric used for DTW-aligning of fragments is chosen to be the symmetrised Kullback-Leibler divergence (with the model output normalised as necessary), with the exception of the model with discretised output, which uses the cosine distance, which for one-hot vectors amounts to a distance of 0 for identical and 1 for non-identical vectors.
 
-We can see that in general, the silhouette seems to be indicative of the relative performance on the ABX task.
-Our suspicion that the number of outputs used were too few when using the Jensen-Shannon loss as originally stated is validated, with the rebalanced loss performing better for both English and Xitsonga.
-The performance of the model with discretised weights further suggests that the basic premise of improving posteriorgrams by partitioning is a sound one.
+We can see that in general, the silhouette seems to be indicative of the relative performance of the models on the ABX task, with well-performing models having a higher silhouette score.
+Among the shallow models, we see that rebalancing the same-class and different-class losses results in significant gains, with discretisation of the weights further improving the results.
+Unsuprisingly however, discretising the output as well severely worsens the results, likely due to too much information being discarded.
+The models were generally able to improve on the input posteriorgrams, especially for the across-speaker task.
+The models performed significantly worse for Xitsonga than for English.
 
-The deep model performs poorly when trained with the Jensen-Shannon loss, despite the same architecture performing well when trained with the coscos$^2$ loss.
+The deep model performs poorly when trained with the Jensen-Shannon loss, despite a similar architecture performing well when trained with the coscos$^2$ loss.
 Inspecting the average output of the deep model over the English data set, we found that only 6 outputs are actually used by the model.
-This suggests that the JS loss is more sensitive than the coscos$^2$ loss when it comes to balancing the same-class and different-class losses.
+This suggests that the JS loss is more sensitive than the coscos$^2$ loss when it comes to balancing the same-class and different-class losses. \todo{too discussion-y?}
+Note that we were unable to replicate the results of \textcite{thiolliere2015hybrid} using the coscos$^2$ loss.
+All models performed significantly worse than the current state-of-the-art \parencite{heck2016unsupervised}.
