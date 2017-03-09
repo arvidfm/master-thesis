@@ -11,22 +11,43 @@ url=false, % for online citations use @online instead of @misc to get the url
 doi=false,
 isbn=false]{biblatex}
 \usepackage{INTERSPEECH_v2}
+\usepackage{fontspec} % included by the document class
+\usepackage{csquotes}
 \usepackage{lipsum} % we can remove this at the end
-\renewcommand*\bibfont{\eightpt}
-\setlength\biblabelsep{\labelsep}
 \usepackage{graphicx}
 \usepackage{tikz}
 \usepackage{pgfplots}
-\usepgfplotslibrary{groupplots}
 \usepackage{todonotes}
 \usepackage[noabbrev]{cleveref}
 \usepackage{units}
 \usepackage{siunitx}
+\setmainfont{TeX Gyre Termes}
+\setsansfont{TeX Gyre Heros}
+\setmonofont{TeX Gyre Cursor}
 
 \addbibresource{strings.bib}
 \addbibresource{references.bib}
 \addbibresource{../bibliography/citations.bib}
 \addbibresource{../bibliography/linguistics.bib}
+
+% biblatex styling
+\renewcommand*\bibfont{\eightpt}
+\setlength\biblabelsep{\labelsep}
+
+% pgfplots settings
+\pgfplotsset{
+  compat=newest,
+  every axis/.style={
+    ylabel style={overlay},
+    yticklabel style={overlay},
+    %xlabel style={overlay},
+    xticklabel style={overlay},
+    scale only axis
+  },
+  wide/.style={width=10cm,height=3cm}
+}
+\usetikzlibrary{positioning,fit}
+\usepgfplotslibrary{groupplots}
 
 \title{We should come up with a concise and expressive title}
 \name{Arvid Fahlström Myrman and Giampiero Salvi}

@@ -74,10 +74,10 @@ A limitation with top-down approaches is that UTD only discovers a fraction of r
 \textbf{This work} % I tried using \paragraph{} but it did not work
 aims at combining the two so far most successful approaches, namely the clustering approach in \parencite{chen2015parallel} and the siamese network approach in \parencite{thiolliere2015hybrid}.
 We first cluster the data in an unsupervised manner using a GMM model.
-Then improve the resulting posteriorgrams using information from UTD by mapping more specific classes into broader classes with a linear model.
+We then improve the resulting posteriorgrams using information from UTD by mapping more specific classes into broader classes with a linear model.
 This way we are able to take advantage of both the whole unlabelled data set, and the smaller set of fragments discovered by UTD.
-Also, our linear model is more interpretable than deep networks such as that in \parencite{thiolliere2015hybrid}.
-While the approach of partitioning posteriorgrams is reminiscent of \textcite{jansen2013weak}, the major difference is that in place of direct clustering of classes, we are instead trying to maximise the similarity/dissimilarity between pairs of speech fragments, which only indirectly results in a partitioning of the classes.
+While the approach of partitioning posteriorgrams is reminiscent of \parencite{jansen2013weak}, the major difference is that in place of direct clustering of classes, we are instead trying to maximise the similarity/dissimilarity between pairs of speech fragments, which only indirectly results in a partitioning of the classes.
+Also, our linear model is more interpretable than the deep networks such as that in \parencite{thiolliere2015hybrid}.
 
 %Many probabilistic models, such as Gaussian mixture models and hidden Markov models, have a concept of latent states or classes.
 %We pose the problem of improving posteriorgrams from such a model as one of merging, or partitioning, these classes.
