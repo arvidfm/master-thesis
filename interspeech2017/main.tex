@@ -2,7 +2,14 @@
 
 %\usepackage{amsmath}
 
-\usepackage[style=ieee,backend=biber,maxbibnames=4,mincitenames=1,maxcitenames=2,doi=false,isbn=false]{biblatex}
+\usepackage[style=ieee,
+backend=biber,
+maxbibnames=4,
+mincitenames=1,
+maxcitenames=2,
+url=false, % for online citations use @online instead of @misc to get the url
+doi=false,
+isbn=false]{biblatex}
 \usepackage{INTERSPEECH_v2}
 \usepackage{lipsum} % we can remove this at the end
 \renewcommand*\bibfont{\eightpt}
@@ -21,7 +28,7 @@
 \addbibresource{../bibliography/citations.bib}
 \addbibresource{../bibliography/linguistics.bib}
 
-\title{Paper Template for INTERSPEECH}
+\title{We should come up with a concise and expressive title}
 \name{Arvid Fahlström Myrman and Giampiero Salvi}
 \address{
   KTH Royal Institute of Technology,\\
@@ -47,6 +54,17 @@
 
 \section{Acknowledgements}
 The GeForce GTX TITAN used for this research were donated by the NVIDIA Corporation. This research was partly supported by the CHIST-ERA project IGLU.
+
+% this is used to check if the references fit one page, it can be removed at the end
+\clearpage
+
+% Problems with references:
+% - dpgmm should be upper case (Heck et al)
+% - Rsnen (Räsänen) in general accented letters do not work
+% - C.-y. Lee (is this right?)
+% - M.-h. Siu (is this right?)
+% - make all references to the same conference equal
+% - change @misc citations to @url to make the url appear in spite of biblatex settings
 
 \printbibliography[heading=bibnumbered]
 %\bibliographystyle{IEEEtran}
