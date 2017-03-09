@@ -7,9 +7,9 @@
 %Unsupervised learning in this manner may also provide insight into the linguistic structure of languages, or the language acquisition of infants.
 
 % in the parencite below I plan to collect citations from earlier times (there are many papers already from the '80s)
-The area of unsupervised speech acquisition has been active for many decades \parencite{}, but only recently has gained attention due to the practical and economical burden of collecting high-quality data needed for supervised speech recognition.
-\textcite{versteegh2015zero} recently introduced the Zero Resource Speech Challenge, which was developed with the goal of finding linguistic units (track 1) or longer recurring word-like fragments (track 2) in speech.
-Models are to be trained using only speech data, voice activity information, and speaker identity information.
+The area of unsupervised learning in speech technology has been active for many decades in the attempt to reduce the amount of handcrafted information needed to build speech recognition and synthesis systems. Many aspects of language acquisition have been covered, from the discovery alternative sub-word units compared to pre-defined phonemes \parencite{LeeEtAl1988,SvendsenEtAl1989,BacchianiEtAl1996,Huijbregts, OGrady:2008up} to the discovery of recurrent patterns that may constitute word candidates \cite{Rasanen2011149, ParkAndGlass2008, Aimetti2010, StoutenEtAl2008phonepatterns, DriesenEtAl2009adaptivenon-negative}.
+\citeauthor{versteegh2015zero} recently introduced the Zero Resource Speech Challenge \parencite{versteegh2015zero}, which was developed with the goal of standardising these endeavours. %finding linguistic units (track 1) or longer recurring word-like fragments (track 2) in speech.
+%Models are to be trained using only speech data, voice activity information, and speaker identity information.
 %In the spirit of the Zero Resource Speech Challenge, this thesis will follow the first track of the challenge, using the same training data and evaluation procedure.
 
 One approach that has proved itself successful in modelling linguistic units is to first discover recurring speech fragments, and then use these fragments as constraints to construct features where speech frames corresponding to the same sound are similar \parencite{synnaeve2014phonetics,thiolliere2015hybrid}.
