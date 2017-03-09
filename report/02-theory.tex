@@ -32,27 +32,24 @@ For a more in-depth description, see a book on signal processing such as \textci
 \subsection{Audio signals}
 
 In the real world speech takes the form of a pressure wave generated as air is pushed through the vocal tract.
-The pressure wave as perceived from a single point in space can be described as a continuous signal $x(t)\; (t\in \mathbb{R})$ \todo{notation for domain?} that varies smoothly in time, with $x(t)$ at each time $t$ describing the amplitude of the wave relative to the ambient pressure.
+The pressure wave as perceived from a single point in space can be described as a continuous signal $x(t), t\in \mathbb{R}$ that varies smoothly in time, with $x(t)$ at each time $t$ describing the amplitude of the wave relative to the ambient pressure.
 Our perception of the signal depends not on the absolute value of $x(t)$ at any given time instant, but rather on how it varies in time.
 As an example, take a simple sine wave $x(t) = \sin(2\pi f t)$; though the signal oscillates continuously in time, a human would perceive the signal as a single constant sound of frequency $f$.
 
 However, while the physical signal is continuous, digital computers are unable to handle signals with an infinitely high time resolution, and as a consequence the signal must be somehow discretised before it can be processed further by speech applications.
 This is done by taking samples of the signal at fixed time steps given by a sampling frequency $f_s$ (e.g.\ \SI{16000}{\Hz}), specifying the number of samples taken per second.
-The resulting sampled signal $x[n]\; (n \in \mathbb{Z})$ is a discrete-time approximation of the original signal $x(t)$.
+The resulting sampled signal $x[n], n \in \mathbb{Z}$ is a discrete-time approximation of the original signal $x(t)$.
 
 \subsection{Short-time Fourier transform}
 
-\todo[inline]{maybe mention window functions?}
-\todo[inline]{something about the Nyquist frequency}
-
-To mirror how humans perceive audio signals it is useful to transfer the signal to some form that better captures the fluctuations of the signal.
+To mirror how humans perceive audio signals it is useful to convert the signal to some form that better captures its fluctuations.
 One way is to analyse the \emph{frequency content} of the signal using the Fourier transform.
 The Fourier transform approximates the signal using a sum of sine and cosine waves of different frequencies, giving the amplitude of each such wave, which in turn can be interpreted as the energy content of the signal at the corresponding frequency.
-In particular, the discrete Fourier transform (DFT), defined as
+In particular we define the discrete Fourier transform (DFT), which gives the frequency content of a finite discrete-time signal of length $N$ samples, as
 \begin{equation}
-X(k) = \sum_{n=0}^{N-1} x[n]e^{-j2\pi kn/N}
+X(k) = \sum_{n=0}^{N-1} x[n]e^{-j2\pi kn/N},
 \end{equation}
-where $j$ is the imaginary unit and $k \in [0, N-1]$ corresponds to the frequency $f = \frac{k}{N}f_s$, gives the frequency content of a finite discrete-time signal of length $N$ samples.
+where $j$ is the imaginary unit and $k \in [0, N-1]$ corresponds to the frequency $f = \frac{k}{N}f_s$, $f_s$ being the sampling frequency of the signal.
 The energy density, or the energy distribution over frequency, is given by $S(k) = \left|X(k)\right|^2$.
 The DFT can be calculated in $O(N \log N)$ asymptotic time using the fast Fourier transform (FFT) algorithm, especially in the case where $N$ is chosen to be a power of 2 \parencite{cooley1965algorithm}.
 
@@ -72,6 +69,18 @@ However, a speech signal can be thought to be \emph{approximately periodic} over
 This gives rise to the so-called short-time Fourier transform (STFT), where the DFT is calculated repeatedly on short sections of the signal using a sliding window; see \cref{fig:sftf} for an example.
 A typical window length is \SI{25}{\ms}, and it is generally shifted forward about \SI{10}{\ms} between each DFT calculation.
 The result of the STFT is the 2D Fourier transform $X(m,k)$ over time step $m$ and frequency $k$, with corresponding energy density $S(m,k) = \left|X(k,m)\right|^2$.
+An illustration of the STFT can be seen in \cref{fig:spectrogram}.
+
+\begin{figure}
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[enlargelimits=false,axis on top,width=8cm,height=4cm,ylabel={Frequency (\si\Hz)},xlabel={Time (\si\s)}]
+      \addplot graphics[xmin=0,xmax=2.8,ymin=0,ymax=4700] {data/spectrogram.pdf};
+    \end{axis}
+  \end{tikzpicture}
+
+  \caption{\label{fig:spectrogram}The result of running the STFT on a \SI{3}{\s} long signal.}
+\end{figure}
 
 \subsection{Mel-scale filter banks}
 
