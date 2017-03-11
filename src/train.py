@@ -57,7 +57,7 @@ def jensen_shannon(dist1, dist2):
     return (kullback_leibler(dist1, average) +
             kullback_leibler(dist2, average)) / 2
 
-def js_loss(x1, x2, types, entropy_penalty=0, epsilon=1e-6, lamb=-1, V=None):
+def js_loss(x1, x2, types, epsilon=1e-6):
     # avoid softmax saturation
     x1, x2 = x1 + epsilon, x2 + epsilon
     # take the square root of the JS divergence (is a metric)
@@ -65,34 +65,29 @@ def js_loss(x1, x2, types, entropy_penalty=0, epsilon=1e-6, lamb=-1, V=None):
     # by adding a small value before taking the square root
     js = T.sqrt(jensen_shannon(x1, x2) + epsilon)
     js_cost = T.switch(types, js, 1 - js)
-    js_same = js_cost[T.nonzero(types)].mean()
-    js_diff = js_cost[T.nonzero(1 - types)].mean()
-    if lamb >= 0:
-        js_mean = 1 / (lamb + 1) * js_same + lamb / (lamb + 1) * js_diff
-    else:
-        js_mean = js_cost.mean()
-    ent = (norm_entropy(x1).mean() + norm_entropy(x2).mean()) / 2
+    return js_cost
 
-    cost = js_mean + entropy_penalty * ent
+def entropy_loss(x1, x2):
+    return (norm_entropy(x1).mean() + norm_entropy(x2).mean()) / 2
 
-    if V is not None:
-        spread = V.sum(axis=0) / V.shape[0]
-        return cost, js_mean, js_same, js_diff, ent, norm_entropy(spread)
-    else:
-        return cost, js_mean, js_same, js_diff, ent
+def calculate_spread(V):
+    spread = V.sum(axis=0) / V.shape[0]
+    return norm_entropy(spread)
 
 def cos(a, b):
     return (a * b).sum(axis=1) / (a.norm(2, axis=1) * b.norm(2, axis=1))
 
-def coscos2(x1, x2, types):
+def cos_loss(x1, x2, types, angular=False):
     cossim = cos(x1, x2)
-    cos_same = cossim[T.nonzero(types)].mean()
-    cos_diff = cossim[T.nonzero(1 - types)].mean()
-    coscos_loss = T.switch(types, (1 - cossim)/2, cossim**2)
-    coscos_same = coscos_loss[T.nonzero(types)].mean()
-    coscos_diff = coscos_loss[T.nonzero(1 - types)].mean()
-    coscos_mean = coscos_loss.mean()
-    return coscos_mean, coscos_mean, coscos_same, coscos_diff, cos_same, cos_diff
+    if angular:
+        cossim = 1 - 2 * T.arccos(cossim - 1e-6) / np.pi
+    cos_cost = T.switch(types, 1 - cossim, cossim)
+    return cos_cost
+
+def coscos2(x1, x2, types):
+    cossim = cos(x1, x2, types)
+    coscos_cost = T.switch(types, (1 - cossim)/2, cossim**2)
+    return coscos_cost
 
 def build_deep(input, outputs, loss, reconstruction_penalty=0,
                ids=None, num_speakers=-1, layer_size=500):
@@ -206,14 +201,31 @@ def prepare_model(input_size, network_type, outputs=64, loss='js', layer_size=50
 
     return inputlayer, mslayer, outlayer
 
-def prepare_loss(inputlayer, outlayer, pairs, types, loss_function, train_pass=False):
+def prepare_loss(inputlayer, outlayer, pairs, types, loss_function,
+                 entropy_penalty=0, V=None, lamb=-1, train_pass=False):
     # reshape to 2d before sending through the network,
     # after which the original shape is recovered
     output = outlayer.output(
         {inputlayer: pairs.reshape((-1, pairs.shape[-1]))},
         train_pass=train_pass).reshape((pairs.shape[0], 2, -1))
 
-    return loss_function(output[:,0], output[:,1], types)
+    x1, x2 = output[:,0], output[:,1]
+    cost = loss_function(x1, x2, types)
+    same_loss = cost[T.nonzero(types)].mean()
+    diff_loss = cost[T.nonzero(1 - types)].mean()
+
+    if lamb >= 0:
+        cost = 1 / (lamb + 1) * same_loss + lamb / (lamb + 1) * diff_loss
+    else:
+        cost = cost.mean()
+
+    ent = entropy_loss(x1, x2)
+    total_cost = cost + entropy_penalty * ent
+
+    if V is not None:
+        return total_cost, cost, same_loss, diff_loss, ent, calculate_spread(V)
+    else:
+        return total_cost, cost, same_loss, diff_loss, ent
 
 @main.command()
 @click.argument('hdf5file', type=dataset.Hdf5Type('r'))
@@ -221,7 +233,7 @@ def prepare_loss(inputlayer, outlayer, pairs, types, loss_function, train_pass=F
 @click.option('--outputs', type=int, default=64, show_default=True)
 @click.option('--entropy-penalty', type=float, default=0, show_default=True)
 @click.option('--diff-weight', type=float, default=-1, show_default=True)
-@click.option('--loss', type=click.Choice(['js', 'coscos']), default='js',
+@click.option('--loss', type=click.Choice(['js', 'coscos', 'cos', 'angular']), default='js',
               show_default=True)
 @click.option('--network-type', type=click.Choice(['shallow', 'shallow-rownorm', 'deep']),
               default='shallow', show_default=True)
@@ -248,15 +260,21 @@ def train_fixedbatch(hdf5file, inset, outputs, entropy_penalty, loss,
     # ---- prepare loss function
     if loss == 'coscos':
         loss_function = coscos2
+    elif loss == 'cos':
+        loss_function = cos_loss
+    elif loss == 'angular':
+        loss_function = functools.partial(cos_loss, angular=True)
     elif loss == 'js':
-        loss_function = functools.partial(
-            js_loss, entropy_penalty=entropy_penalty, lamb=diff_weight,
-            V=mslayer._V if network_type == 'shallow-rownorm' else None)
+        loss_function = js_loss
+
+    V = mslayer._V if network_type == 'shallow-rownorm' else None
 
     train_loss, *train_losses = prepare_loss(
-        inputlayer, outlayer, *train_shared, loss_function, train_pass=True)
+        inputlayer, outlayer, *train_shared, loss_function,
+        entropy_penalty=entropy_penalty, lamb=diff_weight, V=V, train_pass=True)
     valid_loss, *valid_losses = prepare_loss(
-        inputlayer, outlayer, *valid_shared, loss_function)
+        inputlayer, outlayer, *valid_shared, loss_function,
+        entropy_penalty=entropy_penalty, lamb=diff_weight, V=V, train_pass=False)
 
     all_train_losses = theano.function([], [train_loss, *train_losses])
     all_valid_losses = theano.function([], [valid_loss, *valid_losses])
