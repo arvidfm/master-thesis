@@ -1,113 +1,100 @@
 \section{Method}
 \label{sec:method}
 % Arvid: check that I am not getting this wrong
-The goal of our method is to merge acoustic clusters obtained by bottom-up unsupervised classification such that the resulting classes correspond more closely to phonemic units in the language.
 
+\todo[inline]{intuitive explanation of what we want to do}
+%The goal of our method is to merge acoustic clusters obtained by bottom-up unsupervised classification such that the resulting classes correspond more closely to phonemic units in the language.
 
-We take as input a set $\{(\mat x_i, \mat y_i)\}_{i=1}^N$ of $N$ pairs of $M$-dimensional posteriorgrams, i.e.\ (row) vectors of probabilities such that the probabilities sum to one.
-Additionally, we have a set of indicators $\{c_i\}_{i=1}^N$ such that $c_i$ is $1$ if $\mat x_i$ and $\mat y_i$ belong to the same class, and $0$ otherwise.
-The posteriorgrams are taken to represent a distribution over $M$ discrete ``pseudo''-classes (e.g.\ allophones), where several pseudo-classes together describe a single ``true'' class (e.g.\ phonemes).
-Our goal is then to find a surjection that maps the $M$ pseudo-classes to a smaller set of $D$ classes, where we take the probability of a single output class to be the sum of the probabilities of the pseudo-classes that map to the class in question.
+%Given two input vectors $\mat x$ and $\mat y$, we wish to determine whether the vectors belong to the same category, or class.
+%To do so, we project the vectors onto a space designed so that vectors belonging to the same class are close, while vectors belonging to different classes are distant.
+%We consider in particular posteriorgrams---probability vectors $\mat p = (p_1, \dots, p_M)$ representing a posterior distribution over $M$ discrete values.
+%The probabilities in $\mat p$ sum to $1$, with $p_i$ being the probability of the $i$th value; for instance, it could be the probability that a data point belongs to the $i$th latent class as inferred by a Gaussian mixture model.
 
-To simplify optimisation we relax the problem to one of instead finding a continuous linear mapping $f : [0,1]^M \to [0,1]^D$ from the original space to a lower-dimensional space, such that $f(\mat x_i)$ and $f(\mat y_i)$ are close if $\mat x_i$ and $\mat y_i$ belong to the same true class, and distant otherwise.
-We consider each output probability to be a weighted combination of input probabilities: $f(\mat x)_j = \sum_{i=1}^M x_i w_{ij}$, or in matrix notation:
+%We assume that the $M$ input probabilities correspond to ``pseudo''-classes (e.g.\ allophones), where several pseudo-classes together describe a single ``true class'' (e.g.\ phonemes).
+%Our goal is then to find a function $f$ that maps the $M$ pseudo-classes to a smaller set of $D$ output classes, where we take the probability of a single output class to be the sum of the probabilities of the pseudo-classes that map to the class in question.
+%This can also be thought of as finding a partitioning of the input classes.
+%It is vital that no two underlying classes are represented by the same input class, as our mapping would not be able to separate the classes.
+
+We take as input a set $\{(\mat x_i, \mat y_i)\}_{i=1}^N$ of $N$ pairs of $M$-dimensional posteriorgrams, along with a set of indicators $\{c_i\}_{i=1}^N$ such that $c_i$ is $1$ if $\mat x_i$ and $\mat y_i$ belong to the same category, and $0$ otherwise.
+We wish to transform the input to $D$-dimensional posteriorgrams such that two inputs $\mat x_i$, $\mat y_i$ are close in output space if $c_i = 1$, and distant otherwise.
+Our model is a simple linear transformation
 \begin{equation}
- f(\mat x) = \mat x \mat W
+ f(\mat x) = \mat x \mat W,
 \end{equation}
-where $\mat W = (w_{ij}) \in \mathbb R^{M \times D}$.
-If the elements of $\mat W$ are constrained to only take on values in $\{0, 1\}$, and each row of $\mat W$ contains exactly one element with the value $1$, the problem is reduced to finding an exact surjection.
+where $\mat W \in \mathbb R^{M \times D}$.
 
-Even in the relaxed version of the problem, we need to put certain constraints on $\mat W$ in order to ensure that the output $f(\mat x)$ is a posteriorgram.
-First, we need to ensure that all outputs are positive.
-As the input $\mat x$ is a posteriorgram, meaning that all elements in $\mat x$ are positive, it clearly suffices to ensure that all elements in $\mat W$ are positive.
-Second, the output probabilities must sum to 1.
-This can be achieved by ensuring that the elements of each row of $\mat W$ sum to 1, as can be seen by:
-\begin{equation}
- f(\mat x) \mat 1_D = \mat x \mat W \mat 1_D = \mat x \mat 1_D = 1
-\end{equation}
-where $\mat 1_D$ is a column vector of $D$ ones.
-
-In order to ensure that these constraints hold, we construct our model as follows:
+In order to ensure that the output is a probability distribution, we need to constrain $\mat W$ so that each element is positive, and the elements of each row sum to $1$.
+This is done by costructing the model as follows:
 \begin{align}
   \mat V &\in \mathbb R^{M \times D} \\
   \mat{\widetilde W} &= |\mat V| \\
-  \mat W &= \mat{\widetilde W} \oslash \left(\mat{\widetilde W} \mat 1_D \mat 1_D^T\right) \\
-  f(\mat x) &= \mat x \mat W
+  \mat W &= \mat{\widetilde W} \oslash \left(\mat{\widetilde W} \mat 1_D \mat 1_D^T\right) \label{eq:normalize} \\
+  f(\mat x; \mat V) &= \mat x \mat W
 \end{align}
-where $|\cdot|$ denotes the element-wise absolute value, and $\oslash$ denotes element-wise division.
+where $\mat 1_D$ is a column vector of $D$ ones and $\mat 1_D^T$ its transpose, $|\cdot|$ denotes the element-wise absolute value, and $\oslash$ denotes element-wise division.
+Note that the function of \cref{eq:normalize} is to normalise the rows to sum to one.
 This formulation makes it possible to optimise the model while ensuring that the constraints on $\mat W$ hold, by performing gradient descent with respect to $\mat V$.
-Note that the absolute value is almost everywhere differentiable, and the non-differentiability at $0$ does not matter in practice.
 
+\todo[inline]{below paragraph necessary?}
 To encourage the model to place points belonging to the same class close together in the output space, we consider the model as a siamese network.
 Conceptually this involves duplicating the model, creating two identical copies of the same network, with the parameters shared.
-We then feed one input each to both copies, and calculate the loss function using the corresponding outputs:
-\begin{equation}
-  L(\mat V; \mat x, \mat y, c) = \begin{cases}D_{\mathrm{same}}(f(\mat x; \mat V), f(\mat y; \mat V)) & \text{if } c = 1 \\
-    D_{\mathrm{diff}}(f(\mat x; \mat V), f(\mat y; \mat V)) & \text{if } c = 0\end{cases}
-\end{equation}
-where $D_{\mathrm{same}}$ and $D_{\mathrm{diff}}$ are the dissimilarity/similarity measures for pairs belonging to the same class, and pairs belonging to different classes, respectively.
-The loss function over a minibatch $B$ is given by the average
-\begin{equation}
-  \frac{1}{|B|} \sum_{i \in B} L(\mat V; \mat x_i, \mat y_i, c_i)
-\end{equation}
-which is minimised with respect to $\mat V$.
+We then feed one input each to both copies, and calculate the loss function using the corresponding outputs.
 
-\subsection{Loss function}
+Let $B_1 = \{i \in B : c_i = 1\}$ be the subset of same-class pairs in the current minibatch, and $B_0 = \{i \in B : c_i = 0\}$ the subset of different-class pairs.
+Additionally, let $\hat{\mat x}_i = f(\mat x_i; \mat V)$ and $\hat{\mat y}_i = f(\mat y_i; \mat V)$.
+We then define the loss function over a minibatch $B$ as
+\begin{multline}
+  \label{eq:batch-loss}
+  L_{\mathrm{JS}}(\mat V; B) = \frac{1}{(\alpha + 1)|B_1|} \sum_{i \in B_1} D_{\mathrm{same}}(\hat{\mat x}_i, \hat {\mat y}_i) \\ + \frac{\alpha}{(\alpha + 1)|B_0|} \sum_{i \in B_0} D_{\mathrm{diff}}(\hat {\mat x}_i, \hat {\mat y}_i),
+\end{multline}
+where
+\begin{align} \label{eq:js-loss}
+  D_{\mathrm{same}}(\mat x, \mat y) &= \sqrt{\mathrm{JS}(\mat x || \mat y)} \\
+  D_{\mathrm{diff}}(\mat x, \mat y) &= 1 - \sqrt{\mathrm{JS}(\mat x || \mat y)}.
+\end{align}
+Thus, we attempt to minimise the Jensen-Shannon (JS) divergence between same-class points, while maximising the divergence between different-class points.
+$\alpha$ is a hyperparameter determining how much more to weight the different-class loss over the same-class loss.
 
-As the output of the model is a probability distribution, it makes intuitive sense to use a statistical divergence as a measure of similarity.
-Perhaps the most well-known divergence is the Kullback-Leibler (KL) divergence, defined as:
+The JS divergence is defined as
 \begin{equation}
-  \mathrm{KL}(\mat x || \mat y) = \sum_i x_i \log_2\frac{x_i}{y_i},
+  \mathrm{JS}(\mat x || \mat y) = \frac{1}{2} \mathrm{KL}(\mat x || \mat m) + \frac{1}{2} \mathrm{KL}(\mat y || \mat m),
 \end{equation}
-where we take $0 \log_2 0$ to be $0$.
-The KL divergence is always positive, and is 0 only if $\mat x = \mat y$.
-However, it is unbounded, and undefined if there is an $i$ such that $y_i = 0$ but $x_i \ne 0$.
-As such, trying to maximise the dissimilarity between two distributions with respect to the KL divergence is an ill-posed problem, as this will force the divergence to tend towards infinity.
-
-A better choice is the Jensen-Shannon (JS) divergence, defined as
-\begin{equation}
-  \mathrm{JS}(\mat x || \mat y) = \frac{1}{2} \mathrm{KL}(\mat x || \mat m) + \frac{1}{2} \mathrm{KL}(\mat y || \mat m)
-\end{equation}
-where $\mat m = (\mat x + \mat y)/2$.
-The JS divergence is always defined, and is bounded between $0$ (for identical distributions) and $1$ (for distributions with disjoint support), assuming that the base 2 logarithm is used.
-Additionally, the square root of the JS divergence is a metric satisfying the triangle inequality \parencite{endres2003new}; here we make use of this fact, in the hope that the metric properties will result in a more well-behaved loss function.
-
-Thus, we define the loss function as
-\begin{equation} \label{eq:js-loss}
-  L_{\mathrm{JS}}(\mat V; \mat x, \mat y, c) = \begin{cases}
-    \sqrt{\mathrm{JS}(f(\mat x; \mat V) || f(\mat y; \mat V))} & \text{if } c = 1 \\
-    1 - \sqrt{\mathrm{JS}(f(\mat x; \mat V) || f(\mat y; \mat V))} & \text{if } c = 0,
-  \end{cases}
-\end{equation}
-thereby minimising the root JS divergence between pairs belonging to the same class, and maximising the divergence between pairs belonging to different classes\footnote{For identical or near-identical $\mat x$ and $\mat y$, the JS divergence may become negative due to rounding errors caused by limited floating point precision; this can be counteracted by adding a small constant value before taking the square root.}.
+where $\mathrm{KL}(\mat x || \mat y)$ is the Kullback-Leibler (KL) divergence, and $\mat m = (\mat x + \mat y) / 2$.
+The choice of the JS divergence as a loss function is motivated by the view of the model output as a probability distribution, making a statistical distance a suitable choice for measuring the dissimilarity of outputs.
+The JS divergence has a number of advantages over e.g.\ the KL divergence, in that it is symmetric, always defined, and bounded between 0 and 1 (when using the base-2 logarithm).
+Additionally, the square root of the JS divergence, used here, is a metric satisfying the triangle inequality \parencite{endres2003new}.
+The fact that the KL divergence is unbounded makes it a poor choice of dissimilarity measure to maximise for different-class points.
 
 \subsection{Entropy penalty}
-
-To make the output of the model interpretable, it is desirable to ensure that for a given input, only one output unit is active.
-This can be done by introducing an entropy penalty, which attempts to minimise the spread of the probability mass.
-The entropy of a probability vector $\mat x = (x_1, \dots, x_D)$ is defined as
+To ensure the interpretability of the output, we add a penalty term that attempts to minimise the entropy, i.e.\ the spread of the probability mass, in the output distribution.
+We use the normalised entropy, defined as
 \begin{equation}
-  H(\mat x) = -\sum_{i=1}^D x_i \log_2 x_i.
+  \hat H(\mat x) = -\frac{1}{\log_2 D} \sum_{i=1}^D x_i \log_2 x_i.
 \end{equation}
-However, this definition is sensitive to the value of $D$; for instance, the entropy of a uniform distribution vector is $\log_2 D$.
-
-As we may wish to vary the number of outputs of the model, it is of interest for the entropy penalty to be invariant to the number of outputs.
-We therefore introduce the normalised entropy, defined as
+The normalisation ensures that the entropy is always bounded between $0$ and $1$, regardless of the number of outputs $D$ of the model.
+Over a minibatch $B$, the entropy penalty is given as \todo{ugly?}
 \begin{equation}
-  \hat H(\mat x) = \frac{1}{\log_2 D} H(\mat x).
+  L_{\mathrm{H}}(\mat V; B) = \frac{1}{2|B|} \sum_{i \in B} \Bigl(\hat H(f(\mat x_i; \mat V)) + \hat H(f(\mat y_i; \mat V))\Bigr)
 \end{equation}
-The normalised entropy is always between 0 (for degenerate distributions) and 1 (for uniform distributions).
 
 The entropy penalty implicitly encourages sparsity in $\mat W$, as the only way to avoid spreading the probability mass across several outputs is for each row of $\mat W$ to only contain a single element close to $1$.
-It is thus through this penalty that we enforce the model to find an approximate surjection.
-In summary, our final loss function over a minibatch $B$ is as follows:
-\begin{multline}
-  \label{eq:original-loss}
-  L(\mat V; B) = \frac{1}{|B|} \sum_{i \in B} L_{\mathrm{JS}}(\mat V; \mat x_i, \mat y_i, c_i) + \\ 
-  +\frac{\lambda}{2|B|} \sum_{i \in B} \left(\hat H\left(f(\mat x_i; \mat V)\right) + \hat H\left(f(\mat y_i; \mat V)\right)\right)
-\end{multline}
+This sparsity in turn makes it possible to convert the model into an exact partitioning of the input.
+In summary, the complete loss over a minibatch $B$ is as follows:
+\begin{equation}
+  \label{eq:complete-loss}
+  L(\mat V; B) = L_{\mathrm{JS}}(\mat V; B) + \lambda L_{\mathrm{H}}(\mat V; B)
+\end{equation}
 where $\lambda$ is a hyperparameter.
 
+\subsection{Evaluation}
+\todo[inline]{maybe just refer to the ZeroSpeech/ABX papers instead of explaining how the evaluation works?}
+We evaluate the model on the minimal-pair ABX task \parencite{schatz2013evaluating}.
+In the task we are presented with three speech fragments A, B and X, where A and B form minimal pairs, i.e.\ they only differ by a single phoneme.
+The task is to decide which of either A or B belongs to the same category as X.
+This is done by aligning A and B with X using dynamic time warping (DTW) with respect to some underlying frame-based metric.
+The fragment closest to X according to the DTW score is chosen.
+The task takes two forms: within-speaker discriminability, where all fragments belong to the same speaker, and across-speaker discriminability, where A and B belong to one speaker while X belongs to another.
+The final score is the percentage of triples for which the wrong A or B was chosen.
 
 %%% Local Variables: 
 %%% enable-local-variables: t
