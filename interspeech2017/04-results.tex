@@ -7,13 +7,15 @@
  \begin{tabular}{lrrrrrr} \toprule
    & \multicolumn{3}{c}{English} & \multicolumn{3}{c}{Xitsonga} \\ \cmidrule(lr){2-4} \cmidrule(lr){5-7}
     Model & Silhouette & Within & Across & Silhouette & Within & Across \\ \midrule
-    GMM posteriors & 0.008 & 12.313 & 23.841 & 0.066 & 11.434 & 23.181 \\
-    Non-rebalanced & 0.089 & 14.195 & 21.369 & 0.111 & 16.477 & 25.551 \\
-    Rebalanced & 0.108 & 12.770 & 19.831 & 0.146 & 13.990 & 23.202 \\
-    Discretised $\mat W$ & 0.124 & 12.013 & 19.261 & 0.170 & 12.702 & 21.888 \\
-    Discretised output & 0.010 & 16.513 & 24.565 & 0.014 & 19.404 & 29.150 \\
-    Deep JS & -0.370 & 22.376 & 28.233 & -0.320 & 18.190 & 24.759 \\
-    Deep coscos$^2$ & 0.187 & 12.294 & 19.561 & 0.174 & 11.934 & 19.052 \\ \bottomrule
+    GMM posteriors & 0.008 & 12.3 & 23.8 & 0.066 & 11.4 & 23.2 \\
+    Non-rebalanced & 0.089 & 14.2 & 21.4 & 0.111 & 16.5 & 25.6 \\
+    Rebalanced & 0.108 & 12.8 & 19.8 & 0.146 & 14.0 & 23.2 \\
+    Discretised $\mat W$ & 0.124 & 12.0 & 19.3 & 0.170 & 12.7 & 21.9 \\
+    Discretised output & 0.010 & 16.5 & 24.6 & 0.014 & 19.4 & 29.2 \\
+    Deep JS & -0.370 & 22.4 & 28.2 & -0.320 & 18.2 & 24.8 \\
+    Deep coscos$^2$ & 0.175 & 12.0 & 19.7 & 0.298 & 11.8 & 19.2 \\
+    \textcite{thiolliere2015hybrid} & --- & 12.0 & 17.9 & --- & 11.7 & 16.6 \\
+    \textcite{heck2016unsupervised} & --- & 10.6 & 16.0 & --- & 8.0 & 12.6 \\ \bottomrule
  \end{tabular}
 
  \caption{\label{tab:abx}Within-speaker and across-speaker ABX scores as well as the silhouette for the different models for both the English and Xitsonga data sets.
@@ -22,24 +24,21 @@
    All shallow models are trained with an entropy penalty of $\lambda = 0.1$.}
 \end{table*}
 
-We evaluate the models discussed on the minimal-pair ABX task \parencite{schatz2013evaluating}.
-In the task we are presented with three speech fragments A, B and X, where A and B form minimal pairs, i.e.\ they only differ by a single phoneme.
-The task is to decide which of either A or B belongs to the same category as X.
-This is done by DTW-aligning A and B with X with respect to some underlying frame-based metric.
-The fragment closest to X according to the DTW score is chosen.
-The task takes two forms: within-speaker discriminability, where all fragments belong to the same speaker, and across-speaker discriminability, where A and B belong to one speaker while X belongs to another.
-
-The models are evaluated using a evaluation toolkit provided for the Zero Resource Speech Challenge.
+We evaluate the models discussed on the minimal-pair ABX task \parencite{schatz2013evaluating} using the toolkit provided for the Zero Resource Speech Challenge \parencite{versteegh2015zero}.
 The results are shown in \cref{tab:abx}, along with the silhouette for each model.
 The frame-based metric is chosen as the symmetrised Kullback-Leibler divergence (with the model output normalised as necessary), with the exception of the model with discretised output, which uses the cosine distance, which for one-hot vectors amounts to a distance of 0 for identical and 1 for non-identical vectors.
 
-We can see that in general, the silhouette seems to be indicative of the relative performance on the ABX task.
-Our suspicion that the number of outputs used were too few when using the Jensen-Shannon loss as originally stated is validated, with the rebalanced loss performing better for both English and Xitsonga.
-The performance of the model with discretised weights further suggests that the basic premise of improving posteriorgrams by partitioning is a sound one.
+We can see that in general, the silhouette seems to be indicative of the relative performance of the models on the ABX task, with well-performing models having a higher silhouette score.
+Among the shallow models, we see that rebalancing the same-class and different-class losses results in significant gains, with discretisation of the weights further improving the results.
+Unsuprisingly however, discretising the output as well severely worsens the results, likely due to too much information being discarded.
+The models were generally able to improve on the input posteriorgrams, especially for the across-speaker task.
+The models performed significantly worse for Xitsonga than for English.
 
-The deep model performs poorly when trained with the Jensen-Shannon loss, despite the same architecture performing well when trained with the coscos$^2$ loss.
+The deep model performs poorly when trained with the Jensen-Shannon loss, despite a similar architecture performing well when trained with the coscos$^2$ loss.
 Inspecting the average output of the deep model over the English data set, we found that only 6 outputs are actually used by the model.
-This suggests that the JS loss is more sensitive than the coscos$^2$ loss when it comes to balancing the same-class and different-class losses.
+This suggests that the JS loss is more sensitive than the coscos$^2$ loss when it comes to balancing the same-class and different-class losses. \todo{too discussion-y?}
+Note that we were unable to replicate the results of \textcite{thiolliere2015hybrid} using the coscos$^2$ loss.
+All models performed significantly worse than the current state-of-the-art \parencite{heck2016unsupervised}.
 
 
 %%% Local Variables: 
