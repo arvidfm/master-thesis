@@ -1,10 +1,11 @@
-Unsupervised models of speech have a tendency to discover highly speaker-specific representations of speech.
-We propose a method for improving the quality of posteriorgrams generated from an unsupervised model through partitioning of latent classes.
-We do this by training a sparse siamese model to find a linear transformation of the input posteriorgrams to lower-dimensional posteriorgrams, making use of same-category and different-category speech fragment pairs obtained by unsupervised term discovery.
+Unsupervised methods tend to discover highly speaker-specific representations of speech.
+We propose a method for improving the quality of posteriorgrams generated from an unsupervised model through partitioning of the latent classes.
+We do this by training a sparse siamese model to find a linear transformation of the input posteriorgrams to lower-dimensional posteriorgrams.
+The siamese model makes use of same-category and different-category speech fragment pairs obtained by unsupervised term discovery.
 After training, the model is converted into an exact partitioning of the posteriorgrams.
-
-We evaluate the model on the minimal-pair ABX task in the context of the Zero Resource Speech Challenge, and are able to demonstrate that, given posteriorgrams generated from a simple Gaussian mixture model as input, the model outputs low-dimensional posteriorgrams that are more robust to speaker variance.
-This suggests that the model may be viable as a post-processing step to improve the output of probabilistic models in general.
+We evaluate the model on the minimal-pair ABX task in the context of the Zero Resource Speech Challenge.
+We are able to demonstrate that, given posteriorgrams generated from a simple Gaussian mixture model as input, the model outputs low-dimensional posteriorgrams that are more robust to speaker variations.
+This suggests that the model may be viable as a post-processing step to improve acoustic speech units obtained by unsupervised learning.
 
 %%% Local Variables: 
 %%% enable-local-variables: t
