@@ -2,31 +2,16 @@
 \label{sec:results}
 
 \subsection{ABX evaluation}
-\begin{table*}
- \centering
- \begin{tabular}{lrrrrrr} \toprule
-   & \multicolumn{3}{c}{English} & \multicolumn{3}{c}{Xitsonga} \\ \cmidrule(lr){2-4} \cmidrule(lr){5-7}
-    Model & Silhouette & Within & Across & Silhouette & Within & Across \\ \midrule
-    GMM posteriors & 0.008 & 12.3 & 23.8 & 0.066 & 11.4 & 23.2 \\
-    Non-rebalanced & 0.089 & 14.2 & 21.4 & 0.111 & 16.5 & 25.6 \\
-    Rebalanced & 0.108 & 12.8 & 19.8 & 0.146 & 14.0 & 23.2 \\
-    Discretised $\mat W$ & 0.124 & 12.0 & 19.3 & 0.170 & 12.7 & 21.9 \\
-    Discretised output & 0.010 & 16.5 & 24.6 & 0.014 & 19.4 & 29.2 \\
-    Deep JS & -0.370 & 22.4 & 28.2 & -0.320 & 18.2 & 24.8 \\
-    Deep coscos$^2$ & 0.175 & 12.0 & 19.7 & 0.298 & 11.8 & 19.2 \\
-    \textcite{thiolliere2015hybrid} & --- & 12.0 & 17.9 & --- & 11.7 & 16.6 \\
-    \textcite{heck2016unsupervised} & --- & 10.6 & 16.0 & --- & 8.0 & 12.6 \\ \bottomrule
- \end{tabular}
-
- \caption{\label{tab:abx}Within-speaker and across-speaker ABX scores as well as the silhouette for the different models for both the English and Xitsonga data sets.
-   GMM posteriors is the posteriorgrams extracted from the 1024-component Gaussian mixture model; non-rebalanced is the original loss presented in \cref{eq:original-loss}; rebalanced is the alternative loss presented in \cref{eq:rebalanced} with ${\alpha = 1.5}$; discretised $\mat W$ and discretised output are the models presented in \cref{sec:discrete}; and the deep models are those presented in \cref{sec:deep}.
-   The silhouette is calculated on a subset of 1000 clusters for each language.
-   All shallow models are trained with an entropy penalty of $\lambda = 0.1$.}
-\end{table*}
 
 We evaluate the models discussed on the minimal-pair ABX task \parencite{schatz2013evaluating} using the toolkit provided for the Zero Resource Speech Challenge \parencite{versteegh2015zero}.
 The results are shown in \cref{tab:abx}, along with the silhouette for each model.
 The frame-based metric is chosen as the symmetrised Kullback-Leibler divergence (with the model output normalised as necessary), with the exception of the model with discretised output, which uses the cosine distance, which for one-hot vectors amounts to a distance of 0 for identical and 1 for non-identical vectors.
+
+\todo[inline]{incorporate below paragraph into the text properly}
+Within-speaker and across-speaker ABX scores as well as the silhouette for the different models for both the English and Xitsonga data sets.
+   GMM posteriors is the posteriorgrams extracted from the 1024-component Gaussian mixture model; non-rebalanced is the original loss presented in \cref{eq:original-loss}; rebalanced is the alternative loss presented in \cref{eq:rebalanced} with ${\alpha = 1.5}$; discretised $\mat W$ and discretised output are the models presented in \cref{sec:discrete}; and the deep models are those presented in \cref{sec:deep}.
+   The silhouette is calculated on a subset of 1000 clusters for each language.
+   All shallow models are trained with an entropy penalty of $\lambda = 0.1$.
 
 We can see that in general, the silhouette seems to be indicative of the relative performance of the models on the ABX task, with well-performing models having a higher silhouette score.
 Among the shallow models, we see that rebalancing the same-class and different-class losses results in significant gains, with discretisation of the weights further improving the results.
