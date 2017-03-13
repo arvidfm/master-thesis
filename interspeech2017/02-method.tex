@@ -44,35 +44,29 @@ where $\mat 1_D$ is a column vector of $D$ ones and $\mat 1_D^T$ its transpose, 
 Note that the function of \cref{eq:normalize} is to normalise the rows to sum to one.
 This formulation makes it possible to optimise the model while ensuring that the constraints on $\mat W$ hold, by performing gradient descent with respect to $\mat V$.
 
-\todo[inline]{below paragraph necessary?}
-To encourage the model to place points belonging to the same class close together in the output space, we consider the model as a siamese network.
-Conceptually this involves duplicating the model, creating two identical copies of the same network, with the parameters shared.
-We then feed one input each to both copies, and calculate the loss function using the corresponding outputs.
-
-Let $B_1 = \{i \in B : c_i = 1\}$ be the subset of same-class pairs in the current minibatch, and $B_0 = \{i \in B : c_i = 0\}$ the subset of different-class pairs.
+To encourage the model to place points belonging to the same class close together in the output space, we use the siamese paradigm of \parencite{synnaeve2014phonetics,thiolliere2015hybrid}.
+Let ${B_1 = \{i \in B : c_i = 1\}}$ be the subset of same-class pairs in the current minibatch, and ${B_0 = \{i \in B : c_i = 0\}}$ the subset of different-class pairs.
 Additionally, let $\hat{\mat x}_i = f(\mat x_i; \mat V)$ and $\hat{\mat y}_i = f(\mat y_i; \mat V)$.
 We then define the loss function over a minibatch $B$ as
 \begin{multline}
   \label{eq:batch-loss}
   L_{\mathrm{JS}}(\mat V; B) = \frac{1}{(\alpha + 1)|B_1|} \sum_{i \in B_1} D_{\mathrm{same}}(\hat{\mat x}_i, \hat {\mat y}_i) \\ + \frac{\alpha}{(\alpha + 1)|B_0|} \sum_{i \in B_0} D_{\mathrm{diff}}(\hat {\mat x}_i, \hat {\mat y}_i),
 \end{multline}
-where
+where $\alpha$ is a hyperparameter determining how much more to weigh the different-class loss over the same-class loss, and
 \begin{align} \label{eq:js-loss}
   D_{\mathrm{same}}(\mat x, \mat y) &= \sqrt{\mathrm{JS}(\mat x || \mat y)} \\
-  D_{\mathrm{diff}}(\mat x, \mat y) &= 1 - \sqrt{\mathrm{JS}(\mat x || \mat y)}.
+  D_{\mathrm{diff}}(\mat x, \mat y) &= 1 - \sqrt{\mathrm{JS}(\mat x || \mat y)},
 \end{align}
-Thus, we attempt to minimise the Jensen-Shannon (JS) divergence between same-class points, while maximising the divergence between different-class points.
-$\alpha$ is a hyperparameter determining how much more to weight the different-class loss over the same-class loss.
-
-The JS divergence is defined as
+where $\mathrm{JS}(\mat x || \mat y)$ is the Jensen-Shannon (JS) divergence defined as
 \begin{equation}
   \mathrm{JS}(\mat x || \mat y) = \frac{1}{2} \mathrm{KL}(\mat x || \mat m) + \frac{1}{2} \mathrm{KL}(\mat y || \mat m),
 \end{equation}
 where $\mathrm{KL}(\mat x || \mat y)$ is the Kullback-Leibler (KL) divergence, and $\mat m = (\mat x + \mat y) / 2$.
-The choice of the JS divergence as a loss function is motivated by the view of the model output as a probability distribution, making a statistical distance a suitable choice for measuring the dissimilarity of outputs.
-The JS divergence has a number of advantages over e.g.\ the KL divergence, in that it is symmetric, always defined, and bounded between 0 and 1 (when using the base-2 logarithm).
+Thus, we attempt to minimise the JS divergence between same-class points, while maximising the divergence between different-class points.
+
+The choice of a statistical distance as the loss function is motivated by the fact that the output of the model is a probability distribution.
+The JS divergence was chosen over the KL divergence because it is symmetric, always defined, and bounded between 0 and 1 (when using the base-2 logarithm), making it more appropriate for maximising the divergence between different-class points.
 Additionally, the square root of the JS divergence, used here, is a metric satisfying the triangle inequality \parencite{endres2003new}.
-The fact that the KL divergence is unbounded makes it a poor choice of dissimilarity measure to maximise for different-class points.
 
 \subsection{Entropy penalty}
 To ensure the interpretability of the output, we add a penalty term that attempts to minimise the entropy, i.e.\ the spread of the probability mass, in the output distribution.
@@ -81,10 +75,10 @@ We use the normalised entropy, defined as
   \hat H(\mat x) = -\frac{1}{\log_2 D} \sum_{i=1}^D x_i \log_2 x_i.
 \end{equation}
 The normalisation ensures that the entropy is always bounded between $0$ and $1$, regardless of the number of outputs $D$ of the model.
-Over a minibatch $B$, the entropy penalty is given as \todo{ugly?}
-\begin{equation}
-  L_{\mathrm{H}}(\mat V; B) = \frac{1}{2|B|} \sum_{i \in B} \Bigl(\hat H(f(\mat x_i; \mat V)) + \hat H(f(\mat y_i; \mat V))\Bigr)
-\end{equation}
+Over a minibatch $B$, the entropy penalty is given as
+\begin{multline}
+  L_{\mathrm{H}}(\mat V; B) = \\ \frac{1}{2|B|} \sum_{i \in B} \left(\hat H(f(\mat x_i; \mat V)) + \hat H(f(\mat y_i; \mat V))\right)
+\end{multline}
 
 The entropy penalty implicitly encourages sparsity in $\mat W$, as the only way to avoid spreading the probability mass across several outputs is for each row of $\mat W$ to only contain a single element close to $1$.
 This sparsity in turn makes it possible to convert the model into an exact partitioning of the input.
@@ -95,15 +89,15 @@ In summary, the complete loss over a minibatch $B$ is as follows:
 \end{equation}
 where $\lambda$ is a hyperparameter.
 
-\subsection{Evaluation}
-\todo[inline]{maybe just refer to the ZeroSpeech/ABX papers instead of explaining how the evaluation works?}
-We evaluate the model on the minimal-pair ABX task \parencite{schatz2013evaluating}.
-In the task we are presented with three speech fragments A, B and X, where A and B form minimal pairs, i.e.\ they only differ by a single phoneme.
-The task is to decide which of either A or B belongs to the same category as X.
-This is done by aligning A and B with X using dynamic time warping (DTW) with respect to some underlying frame-based metric.
-The fragment closest to X according to the DTW score is chosen.
-The task takes two forms: within-speaker discriminability, where all fragments belong to the same speaker, and across-speaker discriminability, where A and B belong to one speaker while X belongs to another.
-The final score is the percentage of triples for which the wrong A or B was chosen.
+% \subsection{Evaluation}
+% \todo[inline]{maybe just refer to the ZeroSpeech/ABX papers instead of explaining how the evaluation works?}
+% We evaluate the model on the minimal-pair ABX task \parencite{schatz2013evaluating}.
+% In the task we are presented with three speech fragments A, B and X, where A and B form minimal pairs, i.e.\ they only differ by a single phoneme.
+% The task is to decide which of either A or B belongs to the same category as X.
+% This is done by aligning A and B with X using dynamic time warping (DTW) with respect to some underlying frame-based metric.
+% The fragment closest to X according to the DTW score is chosen.
+% The task takes two forms: within-speaker discriminability, where all fragments belong to the same speaker, and across-speaker discriminability, where A and B belong to one speaker while X belongs to another.
+% The final score is the percentage of triples for which the wrong A or B was chosen.
 
 %%% Local Variables: 
 %%% enable-local-variables: t
