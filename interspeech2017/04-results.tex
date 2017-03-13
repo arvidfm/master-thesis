@@ -1,50 +1,6 @@
 \section{Results}
 \label{sec:results}
 
-\subsection{Tuning the entropy penalty}
-We train models using $\lambda \in \{0, 0.05, 0.1, \dots, 0.95\}$ for both the Buckeye and NCHLT Xitsonga corpora.
-The final validation errors for each model are reported in \cref{fig:entropy-penalty}.
-For both corpora, the entropy drops quickly even for small $\lambda$, suggesting that the entropy is relatively easy to optimise for.
-As the entropy penalty is increased, the entropy itself does not decrease; however, the different-class JS loss decreases at the expense of the same-class JS loss. \todo{why?}
-For future experiments, a penalty of $\lambda = 0.1$ is used.
-
-\begin{figure}
-  \centering
-  \begin{tikzpicture}
-    \begin{groupplot}[
-      group style={
-	group size=2 by 1,
-	horizontal sep=0.4cm,
-	ylabels at=edge left,
-	yticklabels at=edge left
-      },
-      ylabel=Divergence/entropy,
-      xmin=0,xmax=0.3,ymin=0,ymax=0.7,
-      width=0.38\columnwidth,height=2.5cm]
-   \nextgroupplot[title=English,xlabel=Penalty ($\lambda$),
-      %legend style={column sep=10pt},
-      legend entries={JS loss,Same-class loss,Different-class loss,Normalised entropy},
-      legend columns=2,
-      legend to name=grouplegend,legend cell align=left
-      ]
-   \addplot table[x=lambda,y=js-v] {data/entropy_buckeye.txt};
-   \addplot table[x=lambda,y=same-js-v] {data/entropy_buckeye.txt};
-   \addplot table[x=lambda,y=diff-js-v] {data/entropy_buckeye.txt};
-   \addplot table[x=lambda,y=entropy-v] {data/entropy_buckeye.txt};
-   
-   \nextgroupplot[title=Xitsonga,xlabel=Penalty ($\lambda$)]
-   \addplot table[x=lambda,y=js-v] {data/entropy_xitsonga.txt};
-   \addplot table[x=lambda,y=same-js-v] {data/entropy_xitsonga.txt};
-   \addplot table[x=lambda,y=diff-js-v] {data/entropy_xitsonga.txt};
-   \addplot table[x=lambda,y=entropy-v] {data/entropy_xitsonga.txt};
-  \end{groupplot}
-  \node[yshift=-1.6cm] at ($(group c1r1.south)!.5!(group c2r1.south)$) {\ref{grouplegend}};
-\end{tikzpicture}
-
-\caption{\label{fig:entropy-penalty} Effect of varying the entropy penalty for the English (left) and Xitsonga (right) corpora.
-The average entropy of the output distribution over the validation samples is shown along with the (root) Jensen-Shannon loss: Both the combined JS loss that is optimised for, and separately for same-class and different-class frame pairs.}
-\end{figure}
-
 \subsection{ABX evaluation}
 \begin{table*}
  \centering

@@ -42,79 +42,62 @@ The models were trained until no improvement had been observed on a held-out val
 
 All network models were implemented in Python 3.5 using Theano \parencite{theano} for automatic differentiation and GPU acceleration, librosa \parencite{librosa} for feature extraction, scikit-learn \parencite{scikit-learn} for various utilities, and numba \parencite{numba} for accelerating various code, in particular dynamic time warping.
 
-\subsection{Tuning the entropy penalty}
-The entropy penalty $\lambda$ is a free parameter, which is data dependent and must be manually specified.
-Ideally, $\lambda$ should be such that the entropy is reduced to a satisfactory degree, without sacrificing the Jensen-Shannon loss.
-As both the normalised entropy loss and the Jensen-Shannon loss are bounded between 0 and 1, one might expect the optimal value of $\lambda$ to be in the vicinity of $1$.
-Section~\ref{sec:results} reports on the optimisation of $\lambda$ with respect to the validation error both for the Buckeye and NCHLT Xitsonga corpora.
+\subsection{Tuning the hyperparameters}
+\todo[inline]{mention somewhere how only a subset of the outputs are used by the model}
+\begin{figure}
+  \centering
+  \begin{tikzpicture}
+    \begin{groupplot}[
+      group style={
+	group size=2 by 1,
+	horizontal sep=0.4cm,
+	ylabels at=edge left,
+	yticklabels at=edge left
+      },
+      ylabel=Divergence/entropy,
+      xmin=0,xmax=0.3,ymin=0,ymax=0.7,
+      width=0.38\columnwidth,height=2.5cm]
+   \nextgroupplot[title=English,xlabel=Penalty ($\lambda$),
+      %legend style={column sep=10pt},
+      legend entries={JS loss,Same-class loss,Different-class loss,Normalised entropy},
+      legend columns=2,
+      legend to name=grouplegend,legend cell align=left
+      ]
+   \addplot table[x=lambda,y=js-v] {data/entropy_buckeye.txt};
+   \addplot table[x=lambda,y=same-js-v] {data/entropy_buckeye.txt};
+   \addplot table[x=lambda,y=diff-js-v] {data/entropy_buckeye.txt};
+   \addplot table[x=lambda,y=entropy-v] {data/entropy_buckeye.txt};
+   
+   \nextgroupplot[title=Xitsonga,xlabel=Penalty ($\lambda$)]
+   \addplot table[x=lambda,y=js-v] {data/entropy_xitsonga.txt};
+   \addplot table[x=lambda,y=same-js-v] {data/entropy_xitsonga.txt};
+   \addplot table[x=lambda,y=diff-js-v] {data/entropy_xitsonga.txt};
+   \addplot table[x=lambda,y=entropy-v] {data/entropy_xitsonga.txt};
+  \end{groupplot}
+  \node[yshift=-1.6cm] at ($(group c1r1.south)!.5!(group c2r1.south)$) {\ref{grouplegend}};
+\end{tikzpicture}
 
-\subsection{Balancing same-class and different-class losses}
-When enforcing low entropy in the output distribution, the resulting weight matrix becomes sparse.
-For instance, after training the model with $\lambda = 0.1$, and inspecting the row-normalised matrix $\mat W$, we find that the largest element on each row is close to 1: on average across the 1024 rows $0.98$ for English and $0.92$ for Xitsonga.
-We can thus inspect $\mat W$ to see how many of the $64$ outputs are actually being used by the model.
-We take the sum over each column of $\mat W$.
-This sum describes roughly how many inputs are mapped to each output.
-We find that for both English and Xitsonga, this sum is above $0.5$ for only a minority of outputs: 11 outputs for English, and 10 outputs for Xitsonga.
-For English, where $\mat W$ is particularly sparse, none of the other 53 sums even reach $0.05$.
+\caption{\label{fig:entropy-penalty} Effect of varying the entropy penalty for the English (left) and Xitsonga (right) corpora.
+The average entropy of the output distribution over the validation samples is shown along with the (root) Jensen-Shannon loss: Both the combined JS loss that is optimised for, and separately for same-class and different-class frame pairs.}
+\end{figure}
 
-Thus, it seems that the entropy penalty naturally encourages the model to make use of only a subset of the outputs.
-However, the actual number of outputs used is not realistic in terms of how many phonemes one would expect to find in a language; it seems that the same-class loss is forcing too many input classes to merge.
-To solve this, we restate the Jensen-Shannon loss function, allowing us to specify how much relative weight to give to the same-class and different-class losses.
-Let $B_1 = \{i \in B : c_i = 1\}$ be the subset of same-class frame pairs in the current minibatch, and $B_0 = \{i \in B : c_i = 0\}$ the subset of different-class frame pairs.
-We then restate the loss as
-\begin{equation}
-  \label{eq:rebalanced}
-  \frac{1}{(\alpha + 1)|B_1|} \sum_{i \in B_1} L_{\mathrm{same}}(\mat V; \mat x_i, \mat y_i) + \frac{\alpha}{(\alpha + 1)|B_0|} \sum_{i \in B_0} L_{\mathrm{diff}}(\mat V; \mat x_i, \mat y_i),
-\end{equation}
-where $L_{\mathrm{same}}$ and $L_{\mathrm{diff}}$ are the same-class and different-class losses defined in \cref{eq:js-loss}.
-$\alpha$ is a hyperparameter specifying how much more to weight the different-class loss over the same-class loss.
-
-$\alpha$ needs to be carefully tuned: A too small $\alpha$ will cause too many input classes to merge, including classes that correspond to completely different phonemes, while a too large $\alpha$ will cause input classes that do correspond to the same phoneme to fail to merge.
-In order to find a good value for $\alpha$, without making use of the gold transcription or prior knowledge of the number of phonemes present in the languages in question, we make use of the fragment clusters discovered by the unsupervised term discovery system.
-The intuition is that the goal of our model is to push apart different clusters, while keeping fragments within a cluster as similar as possible.
-To measure the success of our model, then, we can make use of a cluster separation measure.
-
-Here we use the silhouette \parencite{rousseeuw1987silhouettes}, which makes use of the average similarity between a sample and every other sample in the same cluster, and between a sample and every sample in the most similar other cluster.
-The silhouette ranges from -1 to 1, with a value close to 1 indicating that the clusters are well separated.
-Models were trained for $\alpha \in \{1, 1.5, 2, 2.5, 3, 3.5, 4\}$, with an entropy penalty of $\lambda = 0.1$.
-The silhouette was then calculated on a subset of 1000 of the fragment clusters, using the output of the trained models to represent the frames of the fragments.
-The similarity between to fragments was calculated as the DTW score using the symmetrise Kullback-Leibler divergence as a similarity measure between individual frames.
-
-\todo[inline]{is the below paragraph uninteresting? a bit too model-specific?}
-To easily get an estimate of the number of outputs used by the model, we also define the ``spread'' of the model as follows.
-We take the average of the $j$th column:
-\begin{equation}
-  q_j = \frac{1}{M} \sum_{i=1}^M w_{ij}.
-\end{equation}
-This represents the average mapping to the $i$th output.
-As $\mat W$ is row-normalised, the elements of $Q = (q_1, q_2, \dots, q_D)$ sum to 1, and we can thus treat $Q$ as describing a probability distribution.
-A uniform distribution means that each output has the same number of inputs mapped to it.
-Now consider the case where there are $K$ outputs such that the same number of inputs maps to each output, while no inputs map to any other outputs.
-The normalised entropy of $Q$ is then given by
-\begin{equation}
-  \hat H(Q) = - \frac{1}{\log_2 D} \sum_{i=1}^K \frac{1}{K} \log_2 \frac{1}{K} = \frac{\log_2 K}{\log_2 D}.
-\end{equation}
-Solving for $K$ we have
-\begin{equation}
-  K = D^{\hat H(Q)},
-\end{equation}
-which is an approximation of the number of outputs used by the model, which we define as the spread.
-A value of $K$ close to $D$ is an indicator that all the outputs are being used equally, suggesting that it may be a good idea to increase the number of outputs.
+$\lambda$ is chosen to be the smallest value that reduces the entropy to a satisfactory degree.
+\Cref{fig:entropy-penalty} shows the resulting losses after convergence for the values of $\lambda$ tested, with $\alpha$ fixed to $1$.
+We choose $\lambda = 0.1$ going forward, as no improvement of the entropy is seen for larger values.
 
 \begin{figure}
  \centering
  \begin{tikzpicture}
    \pgfplotsset{set layers}
    \begin{axis}[
-     scale only axis,
      xmin=0.8,xmax=4.2,
-     ymax=0.25,
+     ymax=0.17,
      axis y line*=left,
      xlabel=$\alpha$,
      ylabel=Silhouette,
      ylabel near ticks,
      yticklabel style={/pgf/number format/fixed},
-     height=0.6\columnwidth,width=0.8\columnwidth,
+     height=0.4\columnwidth,width=0.7\columnwidth,
      legend style={opacity=0.0}]%,
       %legend style={column sep=10pt},legend entries={Silhouette (English),Silhouette (Xitsonga)},legend cell align=left]
       \addplot table[x=alpha,y=sil-en] {data/silhouette.txt}; \label{sil1}
@@ -127,31 +110,35 @@ A value of $K$ close to $D$ is an indicator that all the outputs are being used 
    \begin{axis}[
      scale only axis,
      xmin=0.8,xmax=4.2,
-     ymax=80,
+     ymax=65,
      axis y line*=right,
      axis x line=none,
-     ylabel=Spread,
+     ylabel=Outputs,
      ylabel near ticks,
-     height=0.6\columnwidth,width=0.8\columnwidth,
-     legend style={anchor=north west,at={(0.02,0.98)}}]%,
+     height=0.4\columnwidth,width=0.7\columnwidth,
+     legend style={anchor=south,at={(0.5,1.02)}},
+     legend columns=2]%,
       %legend style={column sep=10pt},legend entries={Silhouette (English),Silhouette (Xitsonga)},legend cell align=left]
    %\addplot+[mark=x] table[x=alpha,y=sil-en] {data/silhouette.txt};
    \addlegendimage{/pgfplots/refstyle=sil1}\addlegendentry{Silhouette (English)}
    \addlegendimage{/pgfplots/refstyle=sil2}\addlegendentry{Silhouette (Xitsonga)}
    \addplot+[dashed] table[x=alpha,y=spread-en] {data/silhouette.txt};
-   \addlegendentry{Spread (English)}
+   \addlegendentry{Outputs (English)}
    %\addplot+[mark=x] table[x=alpha,y=sil-ts] {data/silhouette.txt};
    \addplot+[dashed] table[x=alpha,y=spread-ts] {data/silhouette.txt};
-   \addlegendentry{Spread (Xitsonga)}
+   \addlegendentry{Outputs (Xitsonga)}
    \end{axis}
  \end{tikzpicture}
 
- \caption{\label{fig:silhouette} Silhouette and spread for different weightings of the same-class and different-class losses.}
+ \caption{\label{fig:silhouette} Silhouette for different weightings of the same-class and different-class losses.
+ Also shown is a heuristically calculated estimation of the number of outputs used by the model for different $\alpha$.}
 \end{figure}
 
-\Cref{fig:silhouette} shows the silhouette and spread for different values of $\alpha$.
-As one might expect, more emphasis on the different-class loss results in a higher spread, i.e.\ a larger number of output classes.
-The optimal value of $\alpha$ seems to be around 1.5 for both data sets, we use this value of $\alpha$ going forward.
+To find an optimal $\alpha$ we make use of the clusters discovered by the UTD system, choosing the $\alpha$ that maximises the separation of the clusters.
+We use the silhouette \parencite{rousseeuw1987silhouettes} as a cluster separation measure, taking the distance between individual fragments to be the DTW score, with the symmetrised KL divergence as the frame-based distance.
+The silhouette for different $\alpha$ with $\lambda$ fixed to $0.1$, calculated on a subset of 1000 clusters, can be seen in \cref{fig:silhouette}.
+The optimal value is chosen as $\alpha = 1.5$ for both data sets.
+
 
 \subsection{Discretising the model}
 \label{sec:discrete}
