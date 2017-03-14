@@ -1,3 +1,83 @@
+\begin{figure*}
+  \centering
+  \begin{tikzpicture}
+    \begin{groupplot}[
+      group style={
+	group size=2 by 1,
+	horizontal sep=0.4cm,
+	ylabels at=edge left,
+	yticklabels at=edge left
+      },
+      ylabel=Divergence/entropy,
+      xmin=0,xmax=0.3,ymin=0,ymax=0.7,
+      width=0.38\columnwidth,height=2.5cm]
+   \nextgroupplot[title=English,xlabel=Penalty ($\lambda$),
+      %legend style={column sep=10pt},
+      legend entries={JS loss,Same-class loss,Different-class loss,Normalised entropy},
+      legend columns=2,
+      legend to name=grouplegend,legend cell align=left
+      ]
+   \addplot table[x=lambda,y=js-v] {data/entropy_buckeye.txt};
+   \addplot table[x=lambda,y=same-js-v] {data/entropy_buckeye.txt};
+   \addplot table[x=lambda,y=diff-js-v] {data/entropy_buckeye.txt};
+   \addplot table[x=lambda,y=entropy-v] {data/entropy_buckeye.txt};
+   
+   \nextgroupplot[title=Xitsonga,xlabel=Penalty ($\lambda$)]
+   \addplot table[x=lambda,y=js-v] {data/entropy_xitsonga.txt};
+   \addplot table[x=lambda,y=same-js-v] {data/entropy_xitsonga.txt};
+   \addplot table[x=lambda,y=diff-js-v] {data/entropy_xitsonga.txt};
+   \addplot table[x=lambda,y=entropy-v] {data/entropy_xitsonga.txt};
+  \end{groupplot}
+  \node[yshift=-1.6cm] at ($(group c1r1.south)!.5!(group c2r1.south)$) {\ref{grouplegend}};
+\end{tikzpicture}
+ \begin{tikzpicture}
+   \pgfplotsset{set layers}
+   \begin{axis}[
+     xmin=0.8,xmax=4.2,
+     ymax=0.17,
+     axis y line*=left,
+     xlabel=$\alpha$,
+     ylabel=Silhouette,
+     ylabel near ticks,
+     yticklabel style={/pgf/number format/fixed},
+     height=0.4\columnwidth,width=0.7\columnwidth,
+     legend style={opacity=0.0}]%,
+      %legend style={column sep=10pt},legend entries={Silhouette (English),Silhouette (Xitsonga)},legend cell align=left]
+      \addplot table[x=alpha,y=sil-en] {data/silhouette.txt}; \label{sil1}
+      \addlegendentry{Silhouette (English)}
+   %\addplot+[mark=x] table[x=alpha,y=spread-en] {data/silhouette.txt};
+   \addplot table[x=alpha,y=sil-ts] {data/silhouette.txt}; \label{sil2}
+   \addlegendentry{Silhouette (Xitsonga)}
+   %\addplot+[mark=x] table[x=alpha,y=spread-ts] {data/silhouette.txt};
+   \end{axis}
+   \begin{axis}[
+     scale only axis,
+     xmin=0.8,xmax=4.2,
+     ymax=65,
+     axis y line*=right,
+     axis x line=none,
+     ylabel=Outputs,
+     ylabel near ticks,
+     height=0.4\columnwidth,width=0.7\columnwidth,
+     legend style={anchor=south,at={(0.5,1.02)}},
+     legend columns=2]%,
+      %legend style={column sep=10pt},legend entries={Silhouette (English),Silhouette (Xitsonga)},legend cell align=left]
+   %\addplot+[mark=x] table[x=alpha,y=sil-en] {data/silhouette.txt};
+   \addlegendimage{/pgfplots/refstyle=sil1}\addlegendentry{Silhouette (English)}
+   \addlegendimage{/pgfplots/refstyle=sil2}\addlegendentry{Silhouette (Xitsonga)}
+   \addplot+[dashed] table[x=alpha,y=spread-en] {data/silhouette.txt};
+   \addlegendentry{Outputs (English)}
+   %\addplot+[mark=x] table[x=alpha,y=sil-ts] {data/silhouette.txt};
+   \addplot+[dashed] table[x=alpha,y=spread-ts] {data/silhouette.txt};
+   \addlegendentry{Outputs (Xitsonga)}
+   \end{axis}
+ \end{tikzpicture}
+
+ \caption{\label{fig:entropy-penalty} \textbf{Left:} Average normalised entropy of the output distribution over the validation samples and Jensen-Shannon loss (combined, same-class and different-class) as a function of the entropy penalty $\lambda$ for the English and Xitsonga.
+ \textbf{Right:} Silhouette for different weightings $\alpha$ of the same-class and different-class losses.
+ Also shown is a heuristically calculated estimation of the number of outputs used by the model for different $\alpha$.}
+\end{figure*}
+
 \section{Experiments}
 \label{sec:experiments}
 
@@ -64,95 +144,17 @@ All network models were implemented in Python 3.5 using Theano \parencite{theano
 
 \subsection{Tuning the hyperparameters}
 \todo[inline]{mention somewhere how only a subset of the outputs are used by the model}
-\begin{figure}
-  \centering
-  \begin{tikzpicture}
-    \begin{groupplot}[
-      group style={
-	group size=2 by 1,
-	horizontal sep=0.4cm,
-	ylabels at=edge left,
-	yticklabels at=edge left
-      },
-      ylabel=Divergence/entropy,
-      xmin=0,xmax=0.3,ymin=0,ymax=0.7,
-      width=0.38\columnwidth,height=2.5cm]
-   \nextgroupplot[title=English,xlabel=Penalty ($\lambda$),
-      %legend style={column sep=10pt},
-      legend entries={JS loss,Same-class loss,Different-class loss,Normalised entropy},
-      legend columns=2,
-      legend to name=grouplegend,legend cell align=left
-      ]
-   \addplot table[x=lambda,y=js-v] {data/entropy_buckeye.txt};
-   \addplot table[x=lambda,y=same-js-v] {data/entropy_buckeye.txt};
-   \addplot table[x=lambda,y=diff-js-v] {data/entropy_buckeye.txt};
-   \addplot table[x=lambda,y=entropy-v] {data/entropy_buckeye.txt};
-   
-   \nextgroupplot[title=Xitsonga,xlabel=Penalty ($\lambda$)]
-   \addplot table[x=lambda,y=js-v] {data/entropy_xitsonga.txt};
-   \addplot table[x=lambda,y=same-js-v] {data/entropy_xitsonga.txt};
-   \addplot table[x=lambda,y=diff-js-v] {data/entropy_xitsonga.txt};
-   \addplot table[x=lambda,y=entropy-v] {data/entropy_xitsonga.txt};
-  \end{groupplot}
-  \node[yshift=-1.6cm] at ($(group c1r1.south)!.5!(group c2r1.south)$) {\ref{grouplegend}};
-\end{tikzpicture}
-
-\caption{\label{fig:entropy-penalty} Effect of varying the entropy penalty for the English (left) and Xitsonga (right) corpora.
-The average entropy of the output distribution over the validation samples is shown along with the (root) Jensen-Shannon loss: Both the combined JS loss that is optimised for, and separately for same-class and different-class frame pairs.}
-\end{figure}
 
 $\lambda$ is chosen to be the smallest value that reduces the entropy to a satisfactory degree.
 \Cref{fig:entropy-penalty} shows the resulting losses after convergence for the values of $\lambda$ tested, with $\alpha$ fixed to $1$.
 We choose $\lambda = 0.1$ going forward, as no improvement of the entropy is seen for larger values.
 
-\begin{figure}
- \centering
- \begin{tikzpicture}
-   \pgfplotsset{set layers}
-   \begin{axis}[
-     xmin=0.8,xmax=4.2,
-     ymax=0.17,
-     axis y line*=left,
-     xlabel=$\alpha$,
-     ylabel=Silhouette,
-     ylabel near ticks,
-     yticklabel style={/pgf/number format/fixed},
-     height=0.4\columnwidth,width=0.7\columnwidth,
-     legend style={opacity=0.0}]%,
-      %legend style={column sep=10pt},legend entries={Silhouette (English),Silhouette (Xitsonga)},legend cell align=left]
-      \addplot table[x=alpha,y=sil-en] {data/silhouette.txt}; \label{sil1}
-      \addlegendentry{Silhouette (English)}
-   %\addplot+[mark=x] table[x=alpha,y=spread-en] {data/silhouette.txt};
-   \addplot table[x=alpha,y=sil-ts] {data/silhouette.txt}; \label{sil2}
-   \addlegendentry{Silhouette (Xitsonga)}
-   %\addplot+[mark=x] table[x=alpha,y=spread-ts] {data/silhouette.txt};
-   \end{axis}
-   \begin{axis}[
-     scale only axis,
-     xmin=0.8,xmax=4.2,
-     ymax=65,
-     axis y line*=right,
-     axis x line=none,
-     ylabel=Outputs,
-     ylabel near ticks,
-     height=0.4\columnwidth,width=0.7\columnwidth,
-     legend style={anchor=south,at={(0.5,1.02)}},
-     legend columns=2]%,
-      %legend style={column sep=10pt},legend entries={Silhouette (English),Silhouette (Xitsonga)},legend cell align=left]
-   %\addplot+[mark=x] table[x=alpha,y=sil-en] {data/silhouette.txt};
-   \addlegendimage{/pgfplots/refstyle=sil1}\addlegendentry{Silhouette (English)}
-   \addlegendimage{/pgfplots/refstyle=sil2}\addlegendentry{Silhouette (Xitsonga)}
-   \addplot+[dashed] table[x=alpha,y=spread-en] {data/silhouette.txt};
-   \addlegendentry{Outputs (English)}
-   %\addplot+[mark=x] table[x=alpha,y=sil-ts] {data/silhouette.txt};
-   \addplot+[dashed] table[x=alpha,y=spread-ts] {data/silhouette.txt};
-   \addlegendentry{Outputs (Xitsonga)}
-   \end{axis}
- \end{tikzpicture}
-
- \caption{\label{fig:silhouette} Silhouette for different weightings of the same-class and different-class losses.
- Also shown is a heuristically calculated estimation of the number of outputs used by the model for different $\alpha$.}
-\end{figure}
+%\begin{figure*}
+% \centering
+%
+% \caption{\label{fig:silhouette} Silhouette for different weightings of the same-class and different-class losses.
+% Also shown is a heuristically calculated estimation of the number of outputs used by the model for different $\alpha$.}
+%\end{figure*}
 
 To find an optimal $\alpha$ we make use of the clusters discovered by the UTD system, choosing the $\alpha$ that maximises the separation of the clusters.
 We use the silhouette \parencite{rousseeuw1987silhouettes} as a cluster separation measure, taking the distance between individual fragments to be the DTW score, with the symmetrised KL divergence as the frame-based distance.
