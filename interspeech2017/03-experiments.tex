@@ -77,30 +77,11 @@
  \caption{\label{fig:entropy-penalty} \textbf{Left:} Average normalised entropy of the output distribution over the validation samples and Jensen-Shannon loss (combined, same-class and different-class) as a function of the entropy penalty $\lambda$ for the English and Xitsonga.
  \textbf{Right:} Silhouette for different weightings $\alpha$ of the same-class and different-class losses.
  Also shown is a heuristically calculated estimation of the number of outputs used by the model for different $\alpha$.}
+ \vspace{-5mm}
 \end{figure*}
 
 \section{Experiments}
 \label{sec:experiments}
-
-\begin{table*}
- \centering
- \caption{\label{tab:abx}ABX and silhouette results for the models.}
- \begin{tabular}{llrrrrrr} \toprule
-   && \multicolumn{3}{c}{English} & \multicolumn{3}{c}{Xitsonga} \\ \cmidrule(lr){3-5} \cmidrule(lr){6-8}
-    & Model & Silhouette & Within & Across & Silhouette & Within & Across \\ \midrule
-    Baseline & GMM posteriors & 0.008 & 12.3 & 23.8 & 0.066 & 11.4 & 23.2 \\ \midrule
-    Proposed models & Non-rebalanced & 0.089 & 14.2 & 21.4 & 0.111 & 16.5 & 25.6 \\
-    & Rebalanced & 0.108 & 12.8 & 19.8 & 0.146 & 14.0 & 23.2 \\
-    & Discretised $\mat W$ & 0.124 & 12.0 & 19.3 & 0.170 & 12.7 & 21.9 \\
-    & Discretised output & 0.010 & 16.5 & 24.6 & 0.014 & 19.4 & 29.2 \\ \midrule
-    Related models & Deep JS & -0.370 & 22.4 & 28.2 & -0.320 & 18.2 & 24.8 \\
-    & Deep coscos$^2$ & 0.175 & 12.0 & 19.7 & 0.298 & 11.8 & 19.2 \\
-    & Deep coscos$^2$ \parencite{thiolliere2015hybrid} & --- & 12.0 & 17.9 & --- & 11.7 & 16.6 \\
-    & DPGMM + LDA \parencite{heck2016unsupervised} & --- & 10.6 & 16.0 & --- & 8.0 & 12.6 \\ \bottomrule
- \end{tabular}
-
-%  \caption{\label{tab:abx}}
-\end{table*}
 
 \subsection{Data}
 To test our method we use the data from the 2015 Zero Resource Speech Challenge.
@@ -132,6 +113,26 @@ The unsupervised term discovery yielded 6512 fragments and 3149 clusters for the
 % For each such fragments, another fragment was sampled uniformly from the fragments belonging to a different cluster.
 % When sampling fragments belonging to a different cluster, the sampling was performed using only either fragments spoken by the same speaker, or fragments spoken by a different speaker, with a probability corresponding to the ratio of same-speaker to different-speaker pairs among the same-class fragment pairs.
 % The different-class fragment pairs were aligned by simply truncating the longer fragment.
+
+\begin{table*}
+ \centering
+ \caption{\label{tab:abx}ABX and silhouette results for the models.}
+ \begin{tabular}{llrrrrrr} \toprule
+   && \multicolumn{3}{c}{English} & \multicolumn{3}{c}{Xitsonga} \\ \cmidrule(lr){3-5} \cmidrule(lr){6-8}
+    & Model & Silhouette & Within & Across & Silhouette & Within & Across \\ \midrule
+    Baseline & GMM posteriors & 0.008 & 12.3 & 23.8 & 0.066 & 11.4 & 23.2 \\ \midrule
+    Proposed models & Non-rebalanced & 0.089 & 14.2 & 21.4 & 0.111 & 16.5 & 25.6 \\
+    & Rebalanced & 0.108 & 12.8 & 19.8 & 0.146 & 14.0 & 23.2 \\
+    & Discretised $\mat W$ & 0.124 & 12.0 & 19.3 & 0.170 & 12.7 & 21.9 \\
+    & Discretised output & 0.010 & 16.5 & 24.6 & 0.014 & 19.4 & 29.2 \\ \midrule
+    Related models & Deep JS & -0.370 & 22.4 & 28.2 & -0.320 & 18.2 & 24.8 \\
+    & Deep coscos$^2$ & 0.175 & 12.0 & 19.7 & 0.298 & 11.8 & 19.2 \\
+    & Deep coscos$^2$ \parencite{thiolliere2015hybrid} & --- & 12.0 & 17.9 & --- & 11.7 & 16.6 \\
+    & DPGMM + LDA \parencite{heck2016unsupervised} & --- & 10.6 & 16.0 & --- & 8.0 & 12.6 \\ \bottomrule
+ \end{tabular}
+
+%  \caption{\label{tab:abx}}
+\end{table*}
 
 \subsection{Model implementation}
 \todo[inline]{mention server specification? cpu/ram/gpu}

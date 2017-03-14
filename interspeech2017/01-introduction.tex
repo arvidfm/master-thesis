@@ -4,7 +4,7 @@ In the area of unsupervised learning in speech technology, researchers have, for
 Many aspects of language acquisition have been covered, from finding sub-word units that are alternative to pre-defined phonemes \parencite{LeeEtAl1988,SvendsenEtAl1989,BacchianiEtAl1996,huijbregts2011unsupervised, OGrady:2008up} to the discovery of recurrent patterns that may constitute word candidates \cite{Rasanen2011149, park2008unsupervised, Aimetti2010, StoutenEtAl2008phonepatterns, DriesenEtAl2009adaptivenon-negative, gs:VanhainenAndSalvi2012Interspeech, gs:VanhainenAndSalvi2014ICASSP}.
 Recently, \citeauthor{versteegh2015zero} introduced the Zero Resource Speech Challenge \parencite{versteegh2015zero}, with the goal of standardising these endeavours.
 Specifically, the first track, most relevant to this paper, involves finding speaker independent linguistic units from speech with no or weak supervision.
-The discovery of linguistic units follows two main approaches in the literature that we will refer to as bottom-up and top-down. 
+The discovery of linguistic units follows two main approaches in the literature that we will refer to as frame-based and term discovery-based. 
 In the first case, acoustic models are inferred directly from the acoustic features \parencite{varadarajan2008unsupervised, lee2012nonparametric, siu2014unsupervised, chen2015parallel, zhang2010towards, versteegh2016zero, heck2016unsupervised, synnaeve2016temporal}.
 The second approach is to first segment the speech into syllable- or word-like units, and afterwards break these units into smaller subword units \parencite{jansen2013weak, park2008unsupervised, jansen2011efficient, versteegh2015zero, jansen2011towards, jansen2013weak, synnaeve2014phonetics, thiolliere2015hybrid, versteegh2016zero, zeghidour2016deep, kamper2015unsupervised, renshaw2015comparison}.
 %The motivation for taking this top-down approach is that sounds that in reality correspond to the same linguistic unit may seem very different when inspecting speech at specific time instances, especially when comparing different speakers.
@@ -15,7 +15,7 @@ The second approach is to first segment the speech into syllable- or word-like u
 %This work seeks to find whether it is possible to combine the two approaches, by first inferring a probabilistic model from unlabelled speech, and afterwards improving on this model using speech fragment information.
 %This approach is similar to the one in \parencite{jansen2013weak}, where a universal background model in the form of a Gaussian mixture model is inferred and later partitioned, with the difference that the partitioning is done approximately using a linear siamese model inspired by \parencite{synnaeve2014phonetics}, taking advantage of both same-class and different-class fragment information.
 
-\textbf{Bottom-up approaches:} % I tried using \paragraph{} but it did not work
+\textbf{Frames-based approaches:} % I tried using \paragraph{} but it did not work
 %Approaches to unsupervised acoustic modelling can broadly be divided into two categories: bottom-up methods that infer the acoustic model directly from the speech frames, and top-down methods that first segment the speech into syllable- or word-like units, and afterwards try break these units into smaller subword units.
 %\subsubsection{Bottom-up approaches}
 %As an individual speech frame only make up a fraction of a complete speech sound, it is natural to model and segment the speech using a model that can capture time dependencies, such as a hidden Markov model (HMM), rather than attempt to cluster the speech frames directly.
@@ -31,7 +31,7 @@ The states of the final models (allophones), are then mapped into phonemes with 
 %The probability of transitioning from one unit to another is thus not modelled.
 Inference of the model is done using Gibbs sampling.
 A similar model but, without constraints on the topology of the HMMs was studied in \parencite{gs:VanhainenAndSalvi2014ICASSP}.
-\textcite{siu2014unsupervised} first use a segmental GMM (SGMM) to generate a transcription of the data and then iteratively train a standard HMM and improve the transcriptions by, in turns, maximising the likelihood of the model parameters given the transcription, and the transcription given the model parameters.
+\textcite{siu2014unsupervised} first use a segmental GMM (SGMM) to generate a transcription of the data and then iteratively train a standard HMM and improve the transcriptions. % by, in turns, maximising the likelihood of the model parameters given the transcription, and the transcription given the model parameters.
 % use an HMM of a more classic form to model the data.
 %An initial transcription of the data in terms of state labels is first generated in an unsupervised manner using a segmental GMM (SGMM).
 %The HMM and transcription are then iteratively updated, maximising the probability of the model parameters given the transcription, and the transcription given the model parameters.
@@ -45,11 +45,11 @@ Despite the simple approach, this turned out to be the overall best-performing m
 In \parencite{synnaeve2016temporal} a siamese network \parencite{bromley1994signature} is used to create an embedding where speech frames close to each other are considered to belong to the same subword unit, while distant speech frames are said to differ.
 %A siamese network is a feedforward neural network that takes two inputs and adjusts its parameters to either maximise or minimise the similarity of the corresponding outputs \parencite{bromley1994signature}.
 
-\textbf{Top-down approaches} % I tried using \paragraph{} but it did not work
- use Unsupervised Term Discovery (UTD) to extract word-like segments that can guide the discovery of more stable sub-word units compared to purely bottom-up approaches.
+\textbf{Term discovery-based approaches} % I tried using \paragraph{} but it did not work
+ use Unsupervised Term Discovery (UTD) to extract word-like segments that can guide the discovery of more stable sub-word units compared to purely frame-based approaches.
 %The rationale is that while at the frame level the same speech sound can seem quite different between different speakers or even different realisations of the sound by the same speaker, patterns over a longer duration of time are easier to identify; this idea is illustrated in \textcite{jansen2013weak}.
 The UTD is usually based on the Segmental Dynamic Time Warping (S-DTW) developed in \parencite{park2008unsupervised}.
-This method, repeatedly performs DTW on two audio streams, each time changing the starting point of the DTW in both streams.
+%This method, repeatedly performs DTW on two audio streams, each time changing the starting point of the DTW in both streams.
 %This yields a set of alignments, from which the stretches of lowest average dissimilarity in each alignment can be extracted.
 %Unfortunately, this approach is inherently $O(n^2)$ in time.
 In \parencite{jansen2011efficient} an approximate version is introduced that reduces the complexity from $O(n^2)$ to $O(n \log n)$ time.
@@ -69,7 +69,7 @@ The network takes a pair of speech frames as input, and adjusts its parameters s
 \textcite{kamper2015unsupervised} use an autoencoder-like structure, where a neural network is trained to ``reconstruct'' a frame given another frame known to be of the same type.
 \textcite{renshaw2015comparison} used this architecture in the Zero Resource Speech Challenge, albeit with a deeper decoder.
 
-A limitation with top-down approaches is that UTD only discovers a fraction of recurring patterns in the data, greatly limiting the amount of examples that are available for further analysis.
+A limitation with term discovery-based approaches is that UTD only discovers a fraction of recurring patterns in the data, greatly limiting the amount of available training data.
 
 \textbf{This work} % I tried using \paragraph{} but it did not work
 aims at combining the two so far most successful approaches, namely the clustering approach in \parencite{chen2015parallel} and the siamese network approach in \parencite{thiolliere2015hybrid}.
