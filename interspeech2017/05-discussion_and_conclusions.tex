@@ -22,14 +22,18 @@
 %This may explain the poor performance of the model on the Xitsonga data set, as far fewer speech fragments were found for Xitsonga than for English.
 
 \section{Conclusions}
-A linear model for approximate partitioning of posteriorgrams was introduced.
-Using posteriorgrams from a Gaussian mixture model trained on MFCCs as a proof of concept, the model was shown to improve the across-speaker performance, with competitive results for the English data set.
-While the better-performing versions of the model depends on two hyperparameters, the hyperparameter search is alleviated somewhat by ease of training the linear model.
+A linear model for partitioning of posteriorgrams was introduced.
+Using posteriorgrams from a Gaussian mixture model trained on MFCCs as a proof of concept, the model was shown to improve the across-speaker performance, with competitive \todo{or not?} results for the English data set.
+While the better-performing versions of the model depends on two hyperparameters, the hyperparameter search is alleviated somewhat by the ease of training the linear model.
 Additionally, the entropy penalty was shown to be easy to optimise for, allowing a small value for the corresponding hyperparameter.
 The silhouette cluster separation measure was shown to be indicative of ABX performance, enabling hyperparameter search without making use of the gold transcription.
 
-The resulting model is sparse and easily interpretable.
+The resulting model is sparse, easily interpretable, and robust to overfitting as a result of the low number of parameters and the regularisation imposed by the entropy penalty.
 However, the Jensen-Shannon loss function used is sensitive to the balancing of the same-class and different-class losses, making it particularly unsuitable for deep architectures.
+
+The model was shown to perform worse for Xitsonga than for English compared to other methods.
+One explanation for this may be higher sensitivity to the dimensionality of the input, as a result of the smaller amount of available evidence in the form of speech fragment pairs for Xitsonga.
+We believe that an interesting extension of the work presented here would be to use posteriorgrams from more advanced probabilistic models, such as that of \textcite{chen2015parallel}, as input.
 
 %\subsection{Future work}
 %A natural extension of this work is to use different probabilistic models to generate the posteriorgrams, and see how this affects the performance of the model.
