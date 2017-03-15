@@ -3,17 +3,15 @@
 \label{sec:results}
 
 \subsection{Model sparsity}
-We find that the resulting model is very sparse, with the average row-wise maximum weight of $\mat W$ being 0.991 for English and 0.929 for Xitsonga, for ${\alpha = 1.5}$ and $\lambda = 0.1$.
+We find that the resulting models are very sparse, with the average row-wise maximum weight of $\mat W$ being 0.991 for English and 0.929 for Xitsonga, for ${\alpha = 1.5}$.
 This also results in only a subset of the available outputs being used, with 33 outputs receiving any probability mass when binarising the English model; for Xitsonga 35 outputs were used.
 
 \subsection{ABX evaluation}
 
 We evaluate the models discussed on the minimal-pair ABX task \parencite{schatz2013evaluating} using the toolkit provided for the Zero Resource Speech Challenge \parencite{versteegh2015zero}.
-The frame-based metric is chosen as the symmetrised Kullback-Leibler divergence (with the model output normalised as necessary), with the exception of the model with binary output, which uses the cosine distance, which for one-hot vectors amounts to a distance of 0 for identical and 1 for non-identical vectors.
-The results are shown in \cref{tab:abx}, along with the silhouette for each model.
+The frame-based metric is chosen as the symmetrised Kullback-Leibler divergence (with the model output normalised as necessary), with the exception of the model with binary output, for which the cosine distance is used, which for one-hot vectors amounts to a distance of 0 for identical and 1 for non-identical vectors.
+The results are shown in \cref{tab:abx}, along with the silhouette for each model, calculated as in \cref{sec:hypersearch}.
 The ABX scores are shown as the percentage of ABX triples for which the model answered incorrectly; lower is better.
-All shallow models are trained with an entropy penalty of $\lambda = 0.1$.
-The binarised models are based on the model trained with $\alpha = 1.5$.
 
 We can see that in general, the silhouette seems to be indicative of the relative performance of the models on the ABX task, with well-performing models having a higher silhouette score.
 Among the shallow models, we see that rebalancing the same-class and different-class losses results in significant gains, with binarisation of the weights further improving the results.

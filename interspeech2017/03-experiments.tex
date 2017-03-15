@@ -4,18 +4,18 @@
 \subsection{Data}
 \label{sec:data}
 
-To test our method we use the data from the 2015 Zero Resource Speech Challenge.
+To test our method we use the same data as the 2015 Zero Resource Speech Challenge.
 The Challenge makes use of two corpora: The Buckeye corpus of conersational English \parencite{buckeyecorpus} and the NCHLT speech corpus of read Xitsonga \parencite{barnard2014nchlt}.
 For the challenge only a subset of the data is used, consisting of 12 speakers for a total of 5 hours of data for the Buckeye corpus, and 24 speakers for a total of 2.5 hours of data for the NCHLT Xitsonga corpus.
 Additionally provided is voice activity information indicating segments containing clean speech, as well as labels indicating the identity of the speaker.
 
-MFCCs features were extracted from the data using a frame window length \SI{25}{\ms} which was shifted \SI{10}{\ms} for each frame, an FFT resolution of 512 frequency steps, and 40 mel-spaced triangular filter banks.
+MFCC features were extracted from the data using a frame window length of \SI{25}{\ms} which was shifted \SI{10}{\ms} for each frame, an FFT resolution of 512 frequency steps, and 40 mel-spaced triangular filter banks.
 13 coefficients with both delta and delta-delta features were used.
 The MFCCs corresponding to segments with voice activity were clustered using an implementation of a Gaussian mixture model (GMM) provided by scikit-learn \parencite{scikit-learn}.
 The GMM was trained using the expectation maximisation algorithm, using $M = 1024$ Gaussians with diagonal covariance matrices, for a maximum of 200 iterations.
-After training posteriorgrams are calculated for each frame.
+After training, posteriorgrams were calculated for each frame.
 
-The unsupervised term discovery yielded 6512 fragments and 3149 clusters for the Buckeye corpus, and 3582 fragments and 1782 clusters for the NCHLT Xitsonga corpus\footnote{The cluster files used for this work were generously provided by Roland Thiollière and Aren Jansen.}.
+The unsupervised term discovery yielded 6512 fragments and 3149 clusters for the Buckeye corpus, and 3582 fragments and 1782 clusters for the NCHLT Xitsonga corpus\footnote{The cluster files used in this work were generously provided by Roland Thiollière and Aren Jansen.}.
 70\% of the same-class and different-class fragment pairs were used for training, with the remaining pairs used for validation to determine when to interrupt the training of the models.
 
 %\subsection{Unsupervised term discovery}
@@ -38,16 +38,19 @@ The unsupervised term discovery yielded 6512 fragments and 3149 clusters for the
 \todo[inline]{mention server specification? cpu/ram/gpu}
 
 We used $D = 64$ outputs for all models.
-The models were trained using AdaMax \parencite{kingma2014adam} with the recommended default parameters $\alpha = 0.002$, $\beta_1 = 0.9$ and $\beta_2 = 0.999$.
-All frames used for training were shuffled once at the start of training, and a minibatch size of 1000 frames was used.
-The models were trained until no improvement had been observed on a held-out validation set for 15 epochs, where one epoch is defined as one complete scan over the training data.
+The models were trained using AdaMax \parencite{kingma2014adam} with the recommended default parameters. % $\alpha = 0.002$, $\beta_1 = 0.9$ and $\beta_2 = 0.999$.
+All frames used for training were shuffled once at the start of training, and a minibatch size of 1000 frame pairs was used.
+The models were trained until no improvement had been observed on the held-out validation set for 15 epochs, where one epoch is defined as one complete scan over the training data.
 
 All network models were implemented in Python 3.5 using Theano \parencite{theano} for automatic differentiation and GPU acceleration, librosa \parencite{librosa} for feature extraction, scikit-learn \parencite{scikit-learn} for various utilities, and numba \parencite{numba} for accelerating various code, in particular dynamic time warping.
 
 \subsection{Tuning the hyperparameters}
+\label{sec:hypersearch}
+
 $\lambda$ is chosen to be the smallest value that reduces the entropy to a satisfactory degree.
-\Cref{fig:entropy-penalty} shows the resulting losses after convergence for the values of $\lambda$ tested, with $\alpha$ fixed to $1$.
-We choose $\lambda = 0.1$ going forward, as no improvement of the entropy is seen for larger values.
+\Cref{fig:entropy-penalty} shows the resulting losses after convergence for the values of $\lambda$ tested, with $\alpha$ fixed at $1$.
+We choose $\lambda = 0.1$ going forward, as little improvement of the entropy is seen for larger values.
+The fact that such a low value suffices to minimise the entropy suggests that the entropy is easy to optimise for. \todo{better for discussion?}
 
 %\begin{figure*}
 % \centering
@@ -58,17 +61,17 @@ We choose $\lambda = 0.1$ going forward, as no improvement of the entropy is see
 
 To find an optimal $\alpha$ we make use of the clusters discovered by the UTD system, choosing the $\alpha$ that maximises the separation of the clusters.
 We use the silhouette \parencite{rousseeuw1987silhouettes} as a cluster separation measure, taking the distance between individual fragments to be the DTW score, with the symmetrised KL divergence as the frame-based distance.
-The silhouette for different $\alpha$ with $\lambda$ fixed to $0.1$, calculated on a subset of 1000 clusters, can be seen in \cref{fig:silhouette}.
-The optimal value is chosen as $\alpha = 1.5$ for both data sets.
+The silhouette for different $\alpha$ with $\lambda$ fixed at $0.1$, calculated on a subset of 1000 clusters, can be seen in \cref{fig:silhouette}.
+The optimal value is found to be $\alpha = 1.5$ for both data sets.
 
 \begin{table*}
  \centering
- \caption{\label{tab:abx}ABX and silhouette results for the models.}
+ \caption{\label{tab:abx}ABX and silhouette results for the models described in \cref{sec:model-desc}.}
  \begin{tabular}{llrrrrrr} \toprule
    && \multicolumn{3}{c}{English} & \multicolumn{3}{c}{Xitsonga} \\ \cmidrule(lr){3-5} \cmidrule(lr){6-8}
     & Model & Silhouette & Within & Across & Silhouette & Within & Across \\ \midrule
     Baseline & GMM posteriors & 0.008 & 12.3 & 23.8 & 0.066 & 11.4 & 23.2 \\ \midrule
-    Proposed models & Real $\mat W$ ($\alpha = 1$) & 0.089 & 14.2 & 21.4 & 0.111 & 16.5 & 25.6 \\
+    Proposed models & Real $\mat W$ ($\alpha = 1$) & 0.093 & 14.1 & 21.2 & 0.119 & 15.8 & 25.1 \\
     & Real $\mat W$ ($\alpha = 1.5$) & 0.108 & 12.8 & 19.8 & 0.146 & 14.0 & 23.2 \\
     & Binary $\mat W$ & 0.124 & 12.0 & 19.3 & 0.170 & 12.7 & 21.9 \\
     & Binary output & 0.010 & 16.5 & 24.6 & 0.014 & 19.4 & 29.2 \\ \midrule
@@ -77,24 +80,22 @@ The optimal value is chosen as $\alpha = 1.5$ for both data sets.
     & Deep coscos$^2$ \parencite{thiolliere2015hybrid} & --- & 12.0 & 17.9 & --- & 11.7 & 16.6 \\
     & DPGMM + LDA \parencite{heck2016unsupervised} & --- & 10.6 & 16.0 & --- & 8.0 & 12.6 \\ \bottomrule
  \end{tabular}
-
-%  \caption{\label{tab:abx}}
 \end{table*}
 
 
-\subsection{Comparison with deep models}
-\label{sec:deep}
-To get an idea of how the JS loss performs in general, we build a deep network with two hidden layers of $500$ sigmoid units each, with $64$ softmax outputs.
-The network is trained using the non-rebalanced JS loss.
-As softmax outputs are naturally sparse, we do not enforce any entropy penalty.
-For comparison we train the same architecture, albeit with sigmoid outputs instead, using the coscos$^2$ loss of \textcite{synnaeve2014phonetics}.
-This is the architecture used by \textcite{thiolliere2015hybrid} in the 2015 Zero Resource Speech Challenge.
+\subsection{Model evaluation}
+\label{sec:model-desc}
+We train two models, one with $\alpha = 1$ and the other with $\alpha = 1.5$ to measure the influence of reweighting the losses.
+Both models are trained with an entropy penalty of $\lambda = 0.1$.
+The latter model is additionally converted into an exact partitioning by binarising the weights.
+We further binarise the output of the model.
 
-As input to both networks we use the log-scale outputs of 40 mel-scaled filter banks.
-All other relevant parameters are the same as for the MFCCs calculated in \cref{sec:data}.
-The filter bank outputs are normalised over the whole data set to have zero mean and unit variance for all dimensions.
-Each frame is fed to the network with a context of 3 frames on both sides, for a total of 280 values used as input to the network.
-All fragments are DTW aligned and sampled in the same way as the posteriorgrams.
+To compare to the shallow models, and to get an idea of how the JS loss performs in general, we also build a deep network with two hidden layers of $500$ sigmoid units each, with $64$ softmax outputs.
+The network is trained using the JS loss with $\alpha = 1$.
+As softmax outputs are naturally sparse, we do not enforce any entropy penalty.
+For comparison we train the same architecture, albeit with 100 sigmoid outputs instead, using the coscos$^2$ loss of \textcite{synnaeve2014phonetics}.
+This is the architecture used by \textcite{thiolliere2015hybrid} in the 2015 Zero Resource Speech Challenge.
+In place of posteriorgrams we use log-scale outputs of 40 mel-scaled filter banks, normalised to have zero mean and unit variance over the whole data set and with a context of 3 frames on both sides, for a total of 280 values as input to the deep networks.
 
 %%% Local Variables: 
 %%% enable-local-variables: t
