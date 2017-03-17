@@ -3,7 +3,8 @@
 % Arvid: check that I am not getting this wrong
 
 %\subsection{Unsupervised term discovery}
-The goal of our method is to create a low-dimensional partition of posteriograms obtained by probabilistic unsupervised clustering such that the resulting representation is more invariant to speaker variation.
+The goal of our method is to find low-dimensional representations of posteriograms obtained by probabilistic unsupervised clustering such that the resulting representation is more invariant to speaker variation.
+The dimensionality reduction is done by partitioning the latent classes described by the posteriorgrams.
 In order to do this in an unsupervised manner, we use information obtained by unsupervised term discovery (UTD) as in \parencite{jansen2011efficient}.
 The result of the UTD is a set of clusters of speech fragments thought to be of the same category (e.g.\ word).
 We then generate a set of same-class and different-class frame pairs, each frame represented as a posteriorgram, by sampling and aligning fragment pairs as in \parencite{thiolliere2015hybrid}.
@@ -90,7 +91,6 @@ Over a minibatch $B$, the entropy penalty is given as
 \end{multline}
 
 The entropy penalty implicitly encourages sparsity in $\mat W$, as the only way to avoid spreading the probability mass across several outputs is for each row of $\mat W$ to only contain a single element close to $1$.
-This sparsity in turn makes it possible to convert the model into an exact partitioning of the input.
 In summary, the complete loss over a minibatch $B$ is as follows:
 \begin{equation}
   \label{eq:complete-loss}
@@ -193,9 +193,9 @@ where $\lambda$ is a hyperparameter.
 
 \subsection{Binarising the model}
 \label{sec:discrete}
-As the resulting model is sparse, we can retrieve an exact partitioning by binarising the model.
-We do this by for each row in $\mat W$ setting the largest element to $1$ and the remaining elements to $0$.
-Using the binarised model as a base, we additionally experiment with binarising the output distribution by setting the largest output to 1 and the rest to 0; this can be thought of as taking the argmax of the output distribution.
+As the resulting model is sparse, we can construct an exact partition of the input classes.
+We do this by setting the largest element in each row in $\mat W$ to $1$, and the remaining elements to $0$, resulting in a binary $\mat W$.
+An optional further processing step is to binarise the output distribution by setting the largest output to 1 and the rest to 0; this can be thought of as taking the argmax of the output distribution.
 
 % \subsection{Evaluation}
 % \todo[inline]{maybe just refer to the ZeroSpeech/ABX papers instead of explaining how the evaluation works?}

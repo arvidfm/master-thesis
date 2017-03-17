@@ -76,7 +76,7 @@ takes inspiration from the two so far most successful approaches, namely the clu
 We first cluster the data in an unsupervised manner using a GMM.
 We then improve the resulting posteriorgrams using information from UTD by mapping speaker- or context-specific classes to broader classes with a linear siamese model.
 This way we are able to take advantage of both the whole unlabelled data set, and the smaller set of fragments discovered by UTD.
-While the approach of partitioning posteriorgrams is reminiscent of \parencite{jansen2013weak}, the major difference is that in place of direct clustering of classes, we are instead trying to maximise the similarity/dissimilarity between pairs of speech fragments, which only indirectly results in a partitioning of the classes.
+While the approach of partitioning posteriorgrams is reminiscent of \parencite{jansen2013weak}, the major difference is that in place of direct clustering of classes, we are instead trying to maximise the similarity/dissimilarity between pairs of speech fragments, which only indirectly results in a partition of the classes.
 Our linear model also has the advantage of being more interpretable than deep networks like that of \parencite{thiolliere2015hybrid}.
 
 %Many probabilistic models, such as Gaussian mixture models and hidden Markov models, have a concept of latent states or classes.

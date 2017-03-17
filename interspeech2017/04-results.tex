@@ -2,28 +2,25 @@
 \section{Results}
 \label{sec:results}
 
-\subsection{Model sparsity}
-We find that the resulting models are very sparse, with the average row-wise maximum weight of $\mat W$ being 0.991 for English and 0.929 for Xitsonga, for ${\alpha = 1.5}$.
-This also results in only a subset of the available outputs being used, with 33 outputs receiving any probability mass when binarising the English model; for Xitsonga 35 outputs were used.
+%\subsection{Model sparsity}
 
-\subsection{ABX evaluation}
+%\subsection{ABX evaluation}
 
-We evaluate the models discussed on the minimal-pair ABX task \parencite{schatz2013evaluating} using the toolkit provided for the Zero Resource Speech Challenge \parencite{versteegh2015zero}.
-The frame-based metric is chosen as the symmetrised Kullback-Leibler divergence (with the model output normalised as necessary), with the exception of the model with binary output, for which the cosine distance is used, which for one-hot vectors amounts to a distance of 0 for identical and 1 for non-identical vectors.
-The results are shown in \cref{tab:abx}, along with the silhouette for each model, calculated as in \cref{sec:hypersearch}.
+The results of the ABX evaluation are shown in \cref{tab:abx}, along with the silhouette for each model, calculated as in \cref{sec:hypersearch}.
 The ABX scores are shown as the percentage of ABX triples for which the model answered incorrectly; lower is better.
 
 We can see that in general, the silhouette seems to be indicative of the relative performance of the models on the ABX task, with well-performing models having a higher silhouette score.
 Among the shallow models, we see that rebalancing the same-class and different-class losses results in significant gains, with binarisation of the weights further improving the results.
 Unsuprisingly however, binarising the output as well severely worsens the results, likely due to too much information being discarded.
-The models were generally able to improve on the input posteriorgrams, especially for the across-speaker task.
-The models performed significantly worse for Xitsonga than for English.
+We find that while the models perform worse than the current state-of-the-art \parencite{heck2016unsupervised}, especially for Xitsonga, they were generally able to improve on the input posteriorgrams, especially for the across-speaker task.
+
+The resulting shallow models are very sparse, with the average row-wise maximum weight of $\mat W$ being 0.991 for English and 0.929 for Xitsonga, for ${\alpha = 1.5}$.
+This also results in only a subset of the available outputs being used, with 33 outputs receiving any probability mass when binarising the English model; for Xitsonga 35 outputs were used.
 
 The deep model performs poorly when trained with the Jensen-Shannon loss, despite a similar architecture performing well when trained with the coscos$^2$ loss.
 Inspecting the average output of the deep model over the English data set, we found that only 6 outputs are actually used by the model.
 This suggests that the JS loss is more sensitive than the coscos$^2$ loss when it comes to balancing the same-class and different-class losses.
 Note that we were unable to replicate the results of \textcite{thiolliere2015hybrid} using the coscos$^2$ loss.
-All models performed significantly worse than the current state-of-the-art \parencite{heck2016unsupervised}.
 
 
 %%% Local Variables: 

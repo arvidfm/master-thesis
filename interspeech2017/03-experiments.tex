@@ -49,18 +49,11 @@ All network models were implemented in Python 3.5 using Theano \parencite{theano
 
 $\lambda$ is chosen to be the smallest value that reduces the entropy to a satisfactory degree.
 \Cref{fig:entropy-penalty} shows the resulting losses after convergence for the values of $\lambda$ tested, with $\alpha$ fixed at $1$.
-We choose $\lambda = 0.1$ going forward, as little improvement of the entropy is seen for larger values.
+We note that little improvement of the entropy is seen for values larger than $\lambda = 0.1$.
 The fact that such a low value suffices to minimise the entropy suggests that the entropy is easy to optimise for. \todo{better for discussion?}
 
-%\begin{figure*}
-% \centering
-%
-% \caption{\label{fig:silhouette} Silhouette for different weightings of the same-class and different-class losses.
-% Also shown is a heuristically calculated estimation of the number of outputs used by the model for different $\alpha$.}
-%\end{figure*}
-
 To find an optimal $\alpha$ we make use of the clusters discovered by the UTD system, choosing the $\alpha$ that maximises the separation of the clusters.
-We use the silhouette \parencite{rousseeuw1987silhouettes} as a cluster separation measure, taking the distance between individual fragments to be the DTW score, with the symmetrised KL divergence as the frame-based distance.
+We use the silhouette \parencite{rousseeuw1987silhouettes} as a cluster separation measure, taking the distance between individual fragments to be the DTW score, with the symmetrised KL divergence as the frame-based distance, where each frame is represented as the output of the model being evaluated.
 The silhouette for different $\alpha$ with $\lambda$ fixed at $0.1$, calculated on a subset of 1000 clusters, can be seen in \cref{fig:silhouette}.
 The optimal value is found to be $\alpha = 1.5$ for both data sets.
 
@@ -76,7 +69,7 @@ The optimal value is found to be $\alpha = 1.5$ for both data sets.
     & Binary $\mat W$ & 0.124 & 12.0 & 19.3 & 0.170 & 12.7 & 21.9 \\
     & Binary output & 0.010 & 16.5 & 24.6 & 0.014 & 19.4 & 29.2 \\ \midrule
     Related models & Deep JS & -0.058 & 18.1 & 25.6 & 0.150 & 17.5 & 23.5 \\
-    & Deep coscos$^2$ (this work) & 0.175 & 12.0 & 19.7 & 0.298 & 11.8 & 19.2 \\
+    & Deep coscos$^2$ (own implementation) & 0.175 & 12.0 & 19.7 & 0.298 & 11.8 & 19.2 \\
     & Deep coscos$^2$ \parencite{thiolliere2015hybrid} & --- & 12.0 & 17.9 & --- & 11.7 & 16.6 \\
     & DPGMM + LDA \parencite{heck2016unsupervised} & --- & 10.6 & 16.0 & --- & 8.0 & 12.6 \\ \bottomrule
  \end{tabular}
@@ -87,8 +80,8 @@ The optimal value is found to be $\alpha = 1.5$ for both data sets.
 \label{sec:model-desc}
 We train two models, one with $\alpha = 1$ and the other with $\alpha = 1.5$ to measure the influence of reweighting the losses.
 Both models are trained with an entropy penalty of $\lambda = 0.1$.
-The latter model is additionally converted into an exact partitioning by binarising the weights.
-We further binarise the output of the model.
+We additionally construct an exact partition using the latter model, by binarising the weight matrix $\mat W$.
+Finally, we also evaluate how much performance is retained when further binarising the output of the model with binary $\mat W$.
 
 To compare to the shallow models, and to get an idea of how the JS loss performs in general, we also build a deep network with two hidden layers of $500$ sigmoid units each, with $64$ softmax outputs.
 The network is trained using the JS loss with $\alpha = 1$.
@@ -96,6 +89,9 @@ As softmax outputs are naturally sparse, we do not enforce any entropy penalty.
 For comparison we train the same architecture, albeit with 100 sigmoid outputs instead, using the coscos$^2$ loss of \textcite{synnaeve2014phonetics}.
 This is the architecture used by \textcite{thiolliere2015hybrid}.
 In place of posteriorgrams we use log-scale outputs of 40 mel-scaled filter banks, normalised to have zero mean and unit variance over the whole data set and with a context of 3 frames on both sides, for a total of 280 values as input to the deep networks.
+
+We evaluate the models on the minimal-pair ABX task \parencite{schatz2013evaluating} using the toolkit provided for the Zero Resource Speech Challenge \parencite{versteegh2015zero}.
+The frame-based metric is chosen as the symmetrised Kullback-Leibler divergence (with the model output normalised as necessary), with the exception of the model with binary output, for which the cosine distance is used, which for one-hot vectors amounts to a distance of 0 for identical and 1 for non-identical vectors.
 
 %%% Local Variables: 
 %%% enable-local-variables: t
