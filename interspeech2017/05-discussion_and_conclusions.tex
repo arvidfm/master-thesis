@@ -23,14 +23,15 @@
 
 \section{Conclusions}
 A linear model for partitioning of posteriorgrams was introduced.
-Using posteriorgrams from a Gaussian mixture model trained on MFCCs, the model was shown to improve the across-speaker performance, with competitive \todo{or not?} results for the English data set.
+The model was shown to be able to reduce the dimensionality of GMM posteriorgrams from 1024 to below 40, while simultaneously improving the across-speaker performance.
 The model does not depend on the GMM, however, as it is able to take posteriorgrams generated from any probabilistic model as input, the only requirement being that the underlying true classes are disentangled in the input representation.
 
 While the model depends on two hyperparameters, the hyperparameter search is alleviated somewhat by the ease of training the linear model.
 Additionally, the entropy penalty was shown to be easy to optimise for.
-The silhouette cluster separation measure was shown to be indicative of ABX performance, enabling hyperparameter search without making use of the gold transcription.
+The silhouette was shown to be indicative of ABX performance, enabling hyperparameter search without making use of the gold transcription.
 
 The resulting model is sparse, easily interpretable, and robust to overfitting as a result of the low number of parameters and the regularisation imposed by the entropy penalty.
+This entropy penalty also results in only a subset of the outputs being used, making the model insensitive to the total number of available outputs.
 However, the Jensen-Shannon loss function used is sensitive to the balancing of the same-class and different-class losses, making it particularly unsuitable for deep architectures.
 
 The model was shown to perform worse for Xitsonga than for English compared to other methods.
