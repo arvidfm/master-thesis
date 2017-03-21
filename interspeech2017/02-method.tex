@@ -4,7 +4,7 @@
 
 %\subsection{Unsupervised term discovery}
 The goal of our method is to find low-dimensional representations of posteriograms obtained by probabilistic unsupervised clustering such that the resulting representation is more invariant to speaker variation.
-The dimensionality reduction is done by partitioning the latent classes described by the posteriorgrams.
+The dimensionality reduction is done by partitioning the latent classes corresponding to the posteriorgram components.
 In order to do this in an unsupervised manner, we use information obtained by unsupervised term discovery (UTD) as in \parencite{jansen2011efficient}.
 The result of the UTD is a set of clusters of speech fragments thought to be of the same category (e.g.\ word).
 We then generate a set of same-class and different-class frame pairs, each frame represented as a posteriorgram, by sampling and aligning fragment pairs as in \parencite{thiolliere2015hybrid}.
@@ -85,7 +85,7 @@ We use the normalised entropy, defined as
   \hat H(\mat x) = -\frac{1}{\log_2 D} \sum_{i=1}^D x_i \log_2 x_i.
 \end{equation}
 The normalisation ensures that the entropy is always bounded between $0$ and $1$, regardless of the number of outputs $D$ of the model.
-Over a minibatch $B$, the entropy penalty is given as
+Over a minibatch $B$, the entropy loss function is given as
 \begin{multline}
   L_{\mathrm{H}}(\mat V; B) = \\ \frac{1}{2|B|} \sum_{i \in B} \left(\hat H(f(\mat x_i; \mat V)) + \hat H(f(\mat y_i; \mat V))\right)
 \end{multline}
@@ -185,7 +185,7 @@ where $\lambda$ is a hyperparameter.
  \caption{\label{fig:silhouette}}
 \end{subfigure}
 
- \caption{\textbf{Left:} Normalised entropy of the output distribution and the combined, same-class and different-class Jensen-Shannon loss, averaged over the validation set, as a function of the entropy penalty $\lambda$ for the English and Xitsonga data sets.
+ \caption{\textbf{Left:} Normalised entropy of the output distribution and the combined, same-class and different-class Jensen-Shannon losses, averaged over the validation set, as a function of the entropy penalty hyperparameter $\lambda$ for the English and Xitsonga data sets.
  \textbf{Right:} Silhouette for different weightings $\alpha$ of the same-class and different-class losses.
  Also shown is a heuristically calculated estimate of the number of outputs used by the model for different $\alpha$.}
  %\vspace{-5mm}

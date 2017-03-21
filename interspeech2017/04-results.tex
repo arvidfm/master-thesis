@@ -6,8 +6,10 @@
 
 %\subsection{ABX evaluation}
 
-The results of the ABX evaluation are shown in \cref{tab:abx}, along with the silhouette for each model, calculated as in \cref{sec:hypersearch}.
+The results of the ABX evaluation are shown in \cref{tab:abx}, along with the silhouette for each model.
+The silhouette is calculated as in \cref{sec:hypersearch}; higher is better.
 The ABX scores are shown as the percentage of ABX triples for which the model answered incorrectly; lower is better.
+We show results for both the within-speaker and across-speaker ABX tasks.
 
 We can see that in general, the silhouette seems to be indicative of the relative performance of the models on the ABX task, with well-performing models having a higher silhouette score.
 Among the shallow models, we see that rebalancing the same-class and different-class losses results in significant gains, with binarisation of the weights further improving the results.
