@@ -14,6 +14,13 @@
 % with this program; if not, write to the Free Software Foundation, Inc.,
 % 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
 
+% \begin{figure}
+%   \centering
+%   Sound + transcription + posteriorgrams
+% 
+%   \caption{\label{fig:postspec}Posteriorgram spectrum}
+% \end{figure}
+
 \chapter{Introduction}
 \section{Background}
 Automatic speech recognition (ASR) is generally framed as a supervised task, where both audio data and the corresponding transcription is available, and the problem is to develop a model that can mimic this mapping from speech to text.
@@ -33,20 +40,38 @@ One source of research in this area is the Zero Resource Speech Challenge \paren
 Models are to be trained using only speech data, voice activity information, and speaker identity information.
 The main goal of the first track of the challenge is to find robust representations of speech frames where sounds belonging to the same phonetic category are more similar than sounds belonging to different categories; this is also the approach we will take in this work.
 
-\todo[inline]{is the below redundant when the related work comes directly after?}
-One approach that has proved itself successful in modelling linguistic units is to first discover longer recurring word-like speech fragments, and then use these fragments as constraints to construct features where speech frames corresponding to the same sound are similar \parencite{synnaeve2014phonetics,thiolliere2015hybrid}.
-One motivation for taking this top-down approach is that sounds that in reality correspond to the same linguistic unit may seem very different when inspecting speech at specific time instances, especially when comparing different speakers; however, when viewed at a larger time scale, patterns from e.g.\ recurring words are easier to find \parencite{jansen2013weak}.
-
-Simpler approaches such as direct clustering of unlabelled speech has also been shown to perform well \parencite{chen2015parallel}.
-This work seeks to find whether it is possible to combine the two approaches, by first inferring a probabilistic model from unlabelled speech, and afterwards improving on this model using speech fragment information.
-This approach is similar to the one of \textcite{jansen2013weak}, where a universal background model in the form of a Gaussian mixture model is inferred and later partitioned, with the difference that the partitioning is done approximately using a linear siamese model inspired by \textcite{synnaeve2014phonetics}, taking advantage of both same-class and different-class fragment information.
-
 \input{03-related-work.tex}
 
 \section{This thesis}
-\todo[inline]{make description more application agnostic?}
 
-Two of the most successful approaches so far are the clustering approach of \textcite{chen2015parallel} and the siamese network approach of \textcite{thiolliere2015hybrid}, described above.
+\begin{figure}
+  \centering
+  \begin{tikzpicture}[outpos/.style={draw,rectangle},inpos/.style={draw,circle,thick},
+    arr/.style={->,thick},yscale=0.8]
+    \node[outpos] at (0,0) {$\Sigma$};
+    \node[outpos] (out3) at (0,1) {$\Sigma$};
+    \node[outpos] at (0,2) {$\Sigma$};
+    \node[outpos] (out2) at (0,3) {$\Sigma$};
+    \node[outpos] (out1) at (0,4) {$\Sigma$};
+    
+    \node[inpos,blue] (a1) at (-4, 3.5) {a};
+    \node[inpos,red] (a2) at (-4.5, 0.5) {a};
+    \node[inpos,blue] (k1) at (-3.4, 1.8) {k};
+    \node[inpos,red] (k2) at (-2.5, 1.5) {k};
+    \node[inpos] (k3) at (-2.5, 4.2) {k};
+    \node[inpos] (m1) at (-1.8, 0.1) {m};
+    
+    \draw (a1) edge[arr] (out2) (a2) edge[arr,bend right=24] (out2)
+          (k1) edge[arr] (out1) (k2) edge[arr] (out1) (k3) edge[arr] (out1)
+	  (m1) edge[arr] (out3);
+  \end{tikzpicture}
+
+  \caption{\label{fig:mapping}Mapping}
+\end{figure}
+
+\todo[inline]{describe posteriorgrams here or earlier in the introduction?}
+
+We take inspiration from two of the most successful approaches so far: the clustering approach of \textcite{chen2015parallel} and the siamese network approach of \textcite{thiolliere2015hybrid}, described above.
 We pose the question of whether it is possible to combine the two approaches by first clustering the data in an unsupervised manner using a probabilistic model, and then improving the resulting posteriorgrams using speech fragment information.
 This way we are able to take advantage of both the whole unlabelled data set, and the smaller set of discovered fragments.
 

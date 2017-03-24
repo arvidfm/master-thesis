@@ -86,8 +86,7 @@ An illustration of the STFT can be seen in \cref{fig:spectrogram}.
 
 There are several problems with working directly with the output of the STFT. One is that the output is very high-dimensional, as $N$ is often chosen to be in the \numrange{512}{2048} range for the DFT.
 Unless very large amounts of data is available, this causes data sparsity issues, which can cause many kinds of models to underperform.
-Additionally, we are not really interested in the exact energy at every frequency step, but 
-would rather like to extract the overall shape of the spectrum, preferably in a way that also suppresses some of the noise.
+Additionally, speech sounds are better described by the general shape of the spectrum rather than the exact energy at every frequency step.
 
 \begin{figure}
   \centering
@@ -154,31 +153,9 @@ Feature-based approaches, instead, incorporate temporal information directly int
 One simple way is to extend each speech frame to include not only the current frame, but also the neighbouring frames before feeding it to the model.
 For instance, if our features consisted of the outputs of a mel-scaled filter bank of size 40 at different time steps $m$ and we wanted to include a context of 2 frames in both directions it time, the frame at each $m$ would be extended to include the frames at $m-2$, $m-1$, $m$, $m+1$ and $m+2$, resulting in a feature vector of size $40\cdot5 = 200$ at each time step.
 
-\todo[inline]{better source for below}
-
 Another feature-based approach is to include approximations of the temporal derivatives in the feature vector, most commonly the first-order (velocity) and second-order (accerelation) derivatives.
-We do this by approximating the feature vector sequence using a second-order polynomial $f(k)=a + bk + ck^2$ and taking its derivative $f'(k)=b + 2ck$.
-Let $y_{-n}, \dots, y_{-1}, y_0, y_1, \dots, y_n$ be a sequence of feature values (e.g.\ the values corresponding to a single MFCC), where we are interested in the temporal derivative at the point corresponding to $y_0$, i.e.\ at $k=0$.
-$n$ is the number of points at each side of $y_0$ that we want to use to estimate the polynomial.
-We wish to find the coefficients that minimise
-\begin{equation}
-\sum_{k=-n}^n (f(k) - y_k)^2.
-\end{equation}
-As the derivative of $f(k)$ at $k=0$ is $f'(0) = b$, we only need to find a solution for $b$.
-We minimise the error function by taking the gradient with respect to $b$ and setting it to $0$:
-\begin{align}
-  \frac{\partial}{\partial b} \sum_{k=-n}^n (f(k) - y_k)^2 &= 0 \\
-  \frac{\partial}{\partial b} \sum_{k=-n}^n (a + bk + ck^2 - y_k)^2 &= 0 \\
-  \sum_{k=-n}^n 2k(a + bk + ck^2 - y_k) &= 0 \\
-  \sum_{k=-n}^n ak + \sum_{k=-n}^n bk^2 + \sum_{k=-n}^n ck^3 &= \sum_{k=-n}^n ky_k.
-\end{align}
-By antisymmetry we see that $\sum_{k=-n}^n ak = \sum_{k=-n}^n ck^3 = 0$, leaving us with
-\begin{align}
-  \sum_{k=-n}^n bk^2 &= \sum_{k=-n}^n ky_k \\
-  b &= \frac{\sum_{k=-n}^n ky_k}{\sum_{k=-n}^n k^2} \\
-  f'(0) &= \frac{\sum_{k=1}^n k(y_k - y_{-k})}{2\sum_{k=1}^n k^2}.
-\end{align}
-Thus, in general, to approximate the first-order temporal derivative at a point in time $t$, also known as the \emph{delta} value at $t$, we have
+Let $\mat y = (y_t)_{t=1}^N$ be a sequence of feature vectors, and $n$ the number of points on both sides of $y_t$ to use to approximate the temporal derivative at $t$.
+The approximate derivative, or \emph{delta} value, at $t$ is then given by
 \begin{equation}
 \Delta y_t \approx \frac{\sum_{k=1}^n k(y_{t+k} - y_{t-k})}{2 \sum_{k=1}^n k^2}
 \end{equation}
@@ -235,7 +212,7 @@ This section will lightly touch upon machine learning concepts relevant to this 
 A large number of techniques in machine learning can be broadly considered to be either supervised techniques, which take a set of data along with corresponding labels and try to learn the mapping from the data to the labels, or unsupervised techniques, which try to find ``interesting'' (as defined by the task at hand) patterns in unlabelled data.
 
 As an example, consider the task of speech recognition.
-The data set used to train our model consists of speech data along with a set of phonetic transcriptions, so that what is being said at each time instant is known.
+The data set used to train our model consists of speech data along with a set of transcriptions, so that what is being said in each utterance is known.
 Our task is to try to learn this mapping from speech to transcription, taking advantage of all available data.
 This is a typical example of supervised learning, as we have a known ``ground truth'' that we are trying to replicate.
 
@@ -365,7 +342,7 @@ Linear regression can be generalised by inserting a so-called ``activation funct
  \mat y = g(\mat x \mat W + \mat b).
 \end{equation}
 
-If $g$ is chosen to be the logistic function $g(\mat z)_j = \sigma(z_j)$, this is known as \emph{logistic regression}.
+If $g$ is chosen to be the logistic function $g(\mat z)_j = \sigma(z_j)$, defined in \cref{eq:logistic}, this is known as \emph{logistic regression}.
 The logistic function constrains the output to the range of $(0,1)$, allowing $y_j$ to be interpreted as modelling the Bernoulli distribution $P(j=1 \mid \mat x)$.
 
 \subsection{Stacked linear models}
@@ -449,7 +426,7 @@ A common choice is the softmax function, which normalises the output to sum to 1
 \mathrm{softmax}(\mat z)_i = \frac{e^{z_i}}{\sum_j e^{z_j}}.
 \end{equation}
 For multi-label classification one can use the logistic function, defined as
-\begin{equation}
+\begin{equation} \label{eq:logistic}
 \sigma(\mat z)_i = \frac{1}{1 + e^{-z_i}}.
 \end{equation}
 
@@ -496,7 +473,7 @@ For single-class classification such that one output is 1 and all others 0, this
  L_{\mathrm{CE}}(\mat \theta; \mat x, \mat y) = -\log \hat y_j
 \end{equation}
 for the $j$ such that $y_j = 1$.
-Minimising the cross-entropy between $\mat y$ and $\mat x$ with respect to $\mat x$ is equivalent to minimising the Kullback--Leibler divergence between the same, making it appropriate as a loss function when interpreting the network output as a probability distribution.
+Minimising the cross-entropy between $\mat y$ and $\mat x$ is equivalent to minimising the Kullback--Leibler divergence between the points, making it appropriate as a loss function when interpreting the network output as a probability distribution.
 
 Regression often makes use of the mean squared error (sometimes multiplied by a factor of $\frac{1}{2}$) instead:
 \begin{equation}

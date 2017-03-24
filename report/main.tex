@@ -60,6 +60,7 @@
 % see http://tex.stackexchange.com/a/113574
 \DeclareNameAlias{sortname}{last-first}
 
+\addbibresource{../bibliography/strings_long.bib}
 \addbibresource{../bibliography/citations.bib}
 \addbibresource{../bibliography/linguistics.bib}
 
@@ -92,7 +93,7 @@
 \renewcommand\thesubfigure{(\alph{subfigure})}
 
 % -- title page
-\title{Improving inter-speaker performance in unsupervised phone discovery using speaker identity side information}
+\title{Improving inter-speaker performance in unsupervised phone discovery by partitioning probabilistic models using linear siamese networks}
 \alttitle{Detta är den svenska översättningen av titeln}
 \author{Arvid Fahlström Myrman}
 \email{arvidfm@kth.se}
@@ -113,12 +114,13 @@
 
 \include{01-introduction}
 \include{02-theory}
-%\include{03-related-work}
 \include{04-methods}
 \include{05-experiments}
 \include{06-discussion}
 
 \newrefcontext[sorting=nyt] % sort by name in the bibliography
 \printbibliography[heading=bibintoc] % include bibliography in table of contents
+
+\include{99-appendix}
 
 \end{document}

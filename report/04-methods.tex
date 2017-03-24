@@ -27,6 +27,7 @@ To do so, we project the vectors onto a space designed so that vectors belonging
 We consider in particular posteriorgrams---probability vectors $\mat p = (p_1, \dots, p_M)$ representing a posterior distribution over $M$ discrete values.
 The probabilities in $\mat p$ sum to $1$, with $p_i$ being the probability of the $i$th value; for instance, it could be the probability that a data point belongs to the $i$th latent class as inferred by a Gaussian mixture model.
 
+\todo[inline]{define allophone/phoneme?}
 We take as input a set $\{(\mat x_i, \mat y_i)\}_{i=1}^N$ of $N$ pairs of $M$-dimensional posteriorgrams.
 We assume that the $M$ input probabilities correspond to ``pseudo''-classes (e.g.\ allophones), where several pseudo-classes together describe a single ``true class'' (e.g.\ phonemes).
 Our goal is then to find a function $f$ that maps the $M$ pseudo-classes to a smaller set of $D$ output classes, where we take the probability of a single output class to be the sum of the probabilities of the pseudo-classes that map to the class in question.
@@ -71,13 +72,13 @@ To encourage the model to place points belonging to the same class close togethe
 Conceptually this involves duplicating the model, creating two identical copies of the same network, with the parameters shared.
 We then feed one input each to both copies, and calculate the loss function using the corresponding outputs:
 \begin{equation}
-  L(\mat V; \mat x, \mat y, c) = \begin{cases}D_{\mathrm{same}}(f(\mat x; \mat V), f(\mat y; \mat V)) & \text{if } c = 1 \\
+  L_{\mathrm D}(\mat V; \mat x, \mat y, c) = \begin{cases}D_{\mathrm{same}}(f(\mat x; \mat V), f(\mat y; \mat V)) & \text{if } c = 1 \\
     D_{\mathrm{diff}}(f(\mat x; \mat V), f(\mat y; \mat V)) & \text{if } c = 0\end{cases}
 \end{equation}
 where $D_{\mathrm{same}}$ and $D_{\mathrm{diff}}$ are the dissimilarity/similarity measures for pairs belonging to the same class, and pairs belonging to different classes, respectively.
 The loss function over a minibatch $B$ is given by the average
-\begin{equation}
-  \frac{1}{|B|} \sum_{i \in B} L(\mat V; \mat x_i, \mat y_i, c_i)
+\begin{equation} \label{eq:nonrebalanced}
+  L_{\mathrm D}(\mat V; B) = \frac{1}{|B|} \sum_{i \in B} L(\mat V; \mat x_i, \mat y_i, c_i)
 \end{equation}
 which is minimised with respect to $\mat V$.
 
@@ -115,11 +116,12 @@ Let $B_1 = \{i \in B : c_i = 1\}$ be the subset of same-class pairs in the curre
 We then restate the loss as
 \begin{equation}
   \label{eq:rebalanced}
-  \frac{1}{(\alpha + 1)|B_1|} \sum_{i \in B_1} D_{\mathrm{same}}(\hat{\mat x}_i, \hat {\mat y}_i) + \frac{\alpha}{(\alpha + 1)|B_0|} \sum_{i \in B_0} D_{\mathrm{diff}}(\hat {\mat x}_i, \hat {\mat y}_i),
+  L_{\mathrm D}(\mat V; B) = \frac{1}{(\alpha + 1)|B_1|} \sum_{i \in B_1} D_{\mathrm{same}}(\hat{\mat x}_i, \hat {\mat y}_i) + \frac{\alpha}{(\alpha + 1)|B_0|} \sum_{i \in B_0} D_{\mathrm{diff}}(\hat {\mat x}_i, \hat {\mat y}_i),
 \end{equation}
 where $\hat{\mat x}_i = f(\mat x_i; \mat V)$ and $\hat{\mat y}_i = f(\mat y_i; \mat V)$.
-$\alpha$ is a hyperparameter specifying how much more to weight the different-class loss over the same-class loss.
+$\alpha$ is a hyperparameter specifying how much more to weigh the different-class loss over the same-class loss.
 
+\todo[inline]{does the below paragraph make sense without having read the entropy penalty section?}
 $\alpha$ needs to be carefully tuned: A too small $\alpha$ will cause too many input classes to merge, including input classes that correspond to completely different underlying classes, while a too large $\alpha$ will cause input classes that do correspond to the same underlying class to fail to merge.
 
 \section{Entropy penalty}
@@ -138,15 +140,25 @@ We therefore introduce the normalised entropy, defined as
   \hat H(\mat x) = \frac{1}{\log_2 D} H(\mat x).
 \end{equation}
 The normalised entropy is always between 0 (for degenerate distributions) and 1 (for uniform distributions).
+Over a minibatch $B$, we define the entropy loss as
+\begin{equation}
+  L_{\mathrm{H}}(\mat V; B) = \frac{1}{2|B|} \sum_{i \in B} \left(\hat H(f(\mat x_i; \mat V)) + \hat H(f(\mat y_i; \mat V))\right).
+\end{equation}
 
 The entropy penalty implicitly encourages sparsity in $\mat W$, as the only way to avoid spreading the probability mass across several outputs is for each row of $\mat W$ to only contain a single element close to $1$.
 It is thus through this penalty that we enforce the model to find an approximate mapping of input classes.
 In summary, our final loss function over a minibatch $B$ is as follows:
 \begin{equation}
-  \label{eq:original-loss}
-  L(\mat V; B) = \frac{1}{|B|} \sum_{i \in B} L_{\mathrm{JS}}(\mat V; \mat x_i, \mat y_i, c_i) + \frac{\lambda}{2|B|} \sum_{i \in B} (\hat H(f(\mat x_i; \mat V)) + \hat H(f(\mat y_i; \mat V)))
+  \label{eq:complete-loss}
+  L(\mat V; B) = L_{\mathrm{D}}(\mat V; B) + \lambda L_{\mathrm{H}}(\mat V; B)
 \end{equation}
 where $\lambda$ is a hyperparameter.
+
+\subsection{Binarising the model}
+\label{sec:discrete}
+As the resulting model is sparse, we can construct an exact partition of the input classes.
+We do this by setting the largest element in each row in $\mat W$ to $1$, and the remaining elements to $0$, resulting in a binary $\mat W$.
+An optional further processing step is to binarise the output distribution by setting the largest output to 1 and the rest to 0; this can be thought of as taking the argmax of the output distribution.
 
 \section{Evaluation}
 
