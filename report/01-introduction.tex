@@ -86,6 +86,103 @@ This means that the mapping function can be approximated using a continuous line
 A linear model also has the added benefit of being more interpretable than deep networks such as that of \textcite{thiolliere2015hybrid}.
 While the approach of partitioning posteriorgrams is very reminiscent of \textcite{jansen2013weak}, the major difference is that in place of direct clustering of classes, we are instead trying to maximise the similarity/dissimilarity between pairs of speech fragments, which only indirectly results in a partitioning of the classes.
 
+\begin{figure}
+  \centering
+  \begin{tikzpicture}
+    %\begin{axis}[enlargelimits=false,axis on top,width=8cm,height=4cm,ylabel={Frequency (\si\Hz)},xlabel={Time (\si\s)}]
+    %\end{axis}
+
+% speaker 1
+% s3102b 146.518752 147.111647 questions
+%   146.518752  122 ng
+%   146.596735  122 k
+%   146.624258  122 w
+%   146.693066  122 ah
+%   146.760727  122 s; *
+%   146.816920  122 ch
+%   147.021050  122 en
+%   147.111647  122 z
+
+% speaker 2
+% s2302a 106.778375 107.628939 questions
+%   106.778375  122 ng
+%   106.883302  122 k
+%   106.921215  122 w
+%   106.985553  122 eh
+%   107.098375  122 s ; *
+%   107.168375  122 ch
+%   107.246360  122 ah
+%   107.348375  122 n
+%   107.628939  122 z
+    \begin{groupplot}[group style={group size=2 by 3, horizontal sep=2cm, vertical sep=0.4cm},
+      enlargelimits=false,width=6.5cm,height=5.7cm,axis on top,xtick=\empty]
+      \nextgroupplot[ylabel={Frequency (\si\Hz)},title={Female speaker}]
+      \addplot graphics[xmin=146.52,xmax=147.11,ymin=0,ymax=3125] {data/spectrum-speaker-1-crop.pdf};
+      \coordinate (kw1t) at (axis cs:146.59,\pgfkeysvalueof{/pgfplots/ymax});
+      \coordinate (we1t) at (axis cs:146.62,\pgfkeysvalueof{/pgfplots/ymax});
+      \coordinate (es1t) at (axis cs:146.69,\pgfkeysvalueof{/pgfplots/ymax});
+      \coordinate (sc1t) at (axis cs:146.76,\pgfkeysvalueof{/pgfplots/ymax});
+      \coordinate (cu1t) at (axis cs:146.82,\pgfkeysvalueof{/pgfplots/ymax});
+      \coordinate (un1t) at (axis cs:147.02,\pgfkeysvalueof{/pgfplots/ymax});
+
+      \nextgroupplot[title={Male speaker}]
+      \addplot graphics[xmin=106.78,xmax=107.63,ymin=0,ymax=3125] {data/spectrum-speaker-2-crop.pdf};
+      \coordinate (kw2t) at (axis cs:106.88,\pgfkeysvalueof{/pgfplots/ymax});
+      \coordinate (we2t) at (axis cs:106.92,\pgfkeysvalueof{/pgfplots/ymax});
+      \coordinate (es2t) at (axis cs:106.99,\pgfkeysvalueof{/pgfplots/ymax});
+      \coordinate (sc2t) at (axis cs:107.10,\pgfkeysvalueof{/pgfplots/ymax});
+      \coordinate (cu2t) at (axis cs:107.17,\pgfkeysvalueof{/pgfplots/ymax});
+      \coordinate (un2t) at (axis cs:107.35,\pgfkeysvalueof{/pgfplots/ymax});
+      
+      \nextgroupplot[ylabel={GMM component}]
+      \addplot graphics[xmin=146.52,xmax=147.11,ymin=1,ymax=1024] {data/gmm-posteriorgrams-speaker-1-crop.pdf};
+      
+      \nextgroupplot
+      \addplot graphics[xmin=106.78,xmax=107.63,ymin=1,ymax=1024] {data/gmm-posteriorgrams-speaker-2-crop.pdf};
+      
+      \nextgroupplot[ylabel={Model output},xlabel={Time}]
+      \addplot graphics[xmin=146.52,xmax=147.11,ymin=1,ymax=33] {data/reduced-posteriorgrams-speaker-1-crop.pdf};
+      \coordinate (kw1b) at (axis cs:146.59,\pgfkeysvalueof{/pgfplots/ymin});
+      \coordinate (we1b) at (axis cs:146.62,\pgfkeysvalueof{/pgfplots/ymin});
+      \coordinate (es1b) at (axis cs:146.69,\pgfkeysvalueof{/pgfplots/ymin});
+      \coordinate (sc1b) at (axis cs:146.76,\pgfkeysvalueof{/pgfplots/ymin});
+      \coordinate (cu1b) at (axis cs:146.82,\pgfkeysvalueof{/pgfplots/ymin});
+      \coordinate (un1b) at (axis cs:147.02,\pgfkeysvalueof{/pgfplots/ymin});
+      
+      \nextgroupplot[xlabel={Time}]
+      \addplot graphics[xmin=106.78,xmax=107.63,ymin=1,ymax=33] {data/reduced-posteriorgrams-speaker-2-crop.pdf};
+      \coordinate (kw2b) at (axis cs:106.88,\pgfkeysvalueof{/pgfplots/ymin});
+      \coordinate (we2b) at (axis cs:106.92,\pgfkeysvalueof{/pgfplots/ymin});
+      \coordinate (es2b) at (axis cs:106.99,\pgfkeysvalueof{/pgfplots/ymin});
+      \coordinate (sc2b) at (axis cs:107.10,\pgfkeysvalueof{/pgfplots/ymin});
+      \coordinate (cu2b) at (axis cs:107.17,\pgfkeysvalueof{/pgfplots/ymin});
+      \coordinate (un2b) at (axis cs:107.35,\pgfkeysvalueof{/pgfplots/ymin});
+
+  \end{groupplot}
+  \draw [thin,white] (kw1t) -- (kw1b);
+  \draw [thin,white] (we1t) -- (we1b);
+  \draw [thin,white] (es1t) -- (es1b);
+  \draw [thin,white] (sc1t) -- (sc1b);
+  \draw [thin,white] (cu1t) -- (cu1b);
+  \draw [thin,white] (un1t) -- (un1b);
+  
+  \draw [thin,white] (kw2t) -- (kw2b);
+  \draw [thin,white] (we2t) -- (we2b);
+  \draw [thin,white] (es2t) -- (es2b);
+  \draw [thin,white] (sc2t) -- (sc2b);
+  \draw [thin,white] (cu2t) -- (cu2b);
+  \draw [thin,white] (un2t) -- (un2b);
+  \end{tikzpicture}
+
+  \caption{\label{fig:model-output}Example of using the proposed model to process utterances of the word ``question'' from two different speakers.
+  First the energy spectrum is calculated for each speech frame (top).
+  After preprocessing the spectrum is then fed to a Gaussian mixture model from which posterior probabilities for each latent class is extracted (middle).
+  Last, the probability vectors from the GMM are reduced in size using the proposed model (bottom).
+  The white crosses mark the most probable class state for each frame.
+  The white vertical lines mark boundaries between speech sounds.
+  The example is meant to be illustrative and does not represent the overall performance of the model.}
+\end{figure}
+
 Using such a linear model, we hope to use speech fragment information to improve on posteriorgrams obtained from an unsupervised probabilistic model.
 In particular we hope to use the model to construct more speaker-invariant posteriorgrams which can be used to discriminate between different linguistic units in a robust manner.
 We evaluate the model using the minimal-pair ABX task used for evaluation in the first track of the Zero Resource Speech Challenge.
