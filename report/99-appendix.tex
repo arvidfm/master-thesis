@@ -1,0 +1,31 @@
+\appendix
+
+\chapter{Calculating delta values}
+\label{app:delta}
+
+As supplementary information we include the details of how the formula for calculating the delta values, i.e.\ the temporal derivative, of e.g.\ MFCCs is derived.
+We consider approximating a feature vector sequence using a second-order polynomial $f(k)=a + bk + ck^2$ and taking its derivative $f'(k)=b + 2ck$.
+Let $y_{-n}, \dots, y_{-1}, y_0, y_1, \dots, y_n$ be a sequence of feature values (e.g.\ the values corresponding to a single MFCC), where we are interested in the temporal derivative at the point corresponding to $y_0$, i.e.\ at $k=0$.
+$n$ is the number of points at each side of $y_0$ that we want to use to estimate the polynomial.
+We wish to find the coefficients that minimise
+\begin{equation}
+\sum_{k=-n}^n (f(k) - y_k)^2.
+\end{equation}
+As the derivative of $f(k)$ at $k=0$ is $f'(0) = b$, we only need to find a solution for $b$.
+We minimise the error function by taking the gradient with respect to $b$ and setting it to $0$:
+\begin{align}
+  \frac{\partial}{\partial b} \sum_{k=-n}^n (f(k) - y_k)^2 &= 0 \\
+  \frac{\partial}{\partial b} \sum_{k=-n}^n (a + bk + ck^2 - y_k)^2 &= 0 \\
+  \sum_{k=-n}^n 2k(a + bk + ck^2 - y_k) &= 0 \\
+  \sum_{k=-n}^n ak + \sum_{k=-n}^n bk^2 + \sum_{k=-n}^n ck^3 &= \sum_{k=-n}^n ky_k.
+\end{align}
+By antisymmetry we see that $\sum_{k=-n}^n ak = \sum_{k=-n}^n ck^3 = 0$, leaving us with
+\begin{align}
+  \sum_{k=-n}^n bk^2 &= \sum_{k=-n}^n ky_k \\
+  b &= \frac{\sum_{k=-n}^n ky_k}{\sum_{k=-n}^n k^2} \\
+  f'(0) &= \frac{\sum_{k=1}^n k(y_k - y_{-k})}{2\sum_{k=1}^n k^2}.
+\end{align}
+Thus, in general, to approximate the first-order temporal derivative at a point in time $t$, also known as the \emph{delta} value at $t$, we have
+\begin{equation}
+\Delta y_t \approx \frac{\sum_{k=1}^n k(y_{t+k} - y_{t-k})}{2 \sum_{k=1}^n k^2}.
+\end{equation}
