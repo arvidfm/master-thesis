@@ -5,6 +5,10 @@
 \DeclareOption{english}{}
 \DeclareOption{swedish}{\inswedishtrue}
 
+\newif\ifgfivepaper
+\DeclareOption{a4paper}{}
+\DeclareOption{g5paper}{\gfivepapertrue}
+
 \newif\ifbachelor
 \DeclareOption{bachelor}{\bachelortrue}
 \DeclareOption{master}{}
@@ -14,18 +18,11 @@
 
 \ProcessOptions\relax
 
-\LoadClass[11pt]{report}
-
-%% Load other packages
-\RequirePackage[swedish,english]{babel} % International language support
-\RequirePackage[a4paper,twoside,
-  top=30mm,bottom=30mm,inner=36mm,outer=18mm,
-  headsep=10mm,headheight=5mm]{geometry} % Set paper and contents dimensions
-\RequirePackage{fancyhdr} % Take control of headers and footers
-\RequirePackage{emptypage} % Supress page numbers on otherwise empty pages
-\RequirePackage{titlesec} % Redefine the appearance of headers
-\RequirePackage{ragged2e} % Ragged right margin is preferred for readability
-\RequirePackage{tocbibind} % Include the bibliography in the table of contents
+\ifgfivepaper
+  \LoadClass[10pt]{report}
+\else
+  \LoadClass[12pt]{report}
+\fi
 
 % Make it possible to conditionally depend on the TeX-engine used
 \RequirePackage{ifxetex}
@@ -34,14 +31,57 @@
 \ifxetex\xeorluatrue\fi
 \ifluatex\xeorluatrue\fi
 
+%% Load other packages
+
+\ifxeorlua
+  \RequirePackage{polyglossia}
+  \ifinswedish
+    \setmainlanguage{swedish}
+    \setotherlanguage{english}
+  \else
+    \setmainlanguage{english}
+    \setotherlanguage{swedish}
+  \fi
+\else
+  \RequirePackage[utf8]{inputenc}
+  \RequirePackage[swedish,english]{babel}
+\fi
+
+\ifgfivepaper
+\RequirePackage[paperwidth=169mm,paperheight=239mm,twoside,
+  top=30mm,bottom=30mm,inner=36mm,outer=18mm,
+  headsep=10mm,headheight=5mm]{geometry} % Set paper and contents dimensions
+\else
+\RequirePackage[a4paper,twoside,
+  top=37mm,bottom=50mm,inner=45mm,outer=35mm,
+  headsep=15mm,headheight=5mm,footskip=25mm]{geometry} % Set paper and contents dimensions
+\fi
+\RequirePackage{fancyhdr} % Take control of headers and footers
+\RequirePackage{emptypage} % Supress page numbers on otherwise empty pages
+
+\RequirePackage{titlesec} % Redefine the appearance of headers
+% === Patch to circumvent a bug in the titlesec package version 2.10.1
+\@ifpackagelater{titlesec}{2016/03/21}{%
+ % Package titlesec is on version 2.10.2 or higher, nothing to do %
+}{%
+ % Check if package titlesec is on version 2.10.1 %
+ \@ifpackagelater{titlesec}{2016/03/15}{%
+  % Package titlesec on version 2.10.1, patch accordingly %
+  \RequirePackage{etoolbox}%
+  \patchcmd{\ttlh@hang}{\parindent\z@}{\parindent\z@\leavevmode}{}{}%
+  \patchcmd{\ttlh@hang}{\noindent}{}{}{}%
+ }{%
+  % Package titlsecon is on version 2.10.0 or lower, nothing to do %
+ }%
+}
+% === End ot titlesec patch
+
 \ifxeorlua
   \RequirePackage{fontspec}
-  % this enebles TeX style ligatures such as ---, '', ``, and so on
-  \defaultfontfeatures{
-    Ligatures={TeX}
-  }
-  \setmainfont{FreeSerif}
-  \setsansfont{FreeSans}
+  \defaultfontfeatures{Ligatures={TeX}} % This enables TeX style ligatures such as ---, '', ``, and so on
+  %\setmainfont{TeX Gyre Pagella} % Palatino from the TeX Gyre Project
+  \setmainfont{FreeSerif}		
+  \setsansfont{FreeSans}		
   \setmonofont{FreeMono}
 \else
   \RequirePackage[T1]{fontenc}
@@ -58,10 +98,6 @@
 
 % Add 5% extra linespacing
 \linespread{1.05}
-
-% Use ragged right margin and indented first lines of paragraphs
-\setlength\RaggedRightParindent{\parindent}
-\RaggedRight
 
 % Set the proper format for the headers
 \titleformat{\chapter}[display]
@@ -94,19 +130,27 @@
 \let\@programme\@empty
 \newcommand{\programme}[1]{\def\@programme{#1}}
 
-% Command to print out the standardized flyleaf page
-\newcommand{\flyleaf}{
-\newgeometry{top=65mm,bottom=30mm,left=62mm,right=18mm}
+% Command to print out the standardized title page
+\renewcommand{\titlepage}{
+\ifgfivepaper
+  \newgeometry{top=65mm,bottom=30mm,left=62mm,right=18mm}
+\else
+  \newgeometry{top=65mm,bottom=30mm,left=50mm,right=35mm}
+\fi
 \thispagestyle{empty}
 \ifinswedish\selectlanguage{swedish}\fi
 \begin{huge}
-  \noindent\sffamily\bfseries \@title \par
+  \begin{flushleft}
+    \noindent\sffamily\bfseries \@title \par
+  \end{flushleft}
 \end{huge}
 \ifx\@subtitle\@empty\relax
 \else
 \begin{Large}
   \vspace{1ex}
-  \noindent\sffamily\bfseries \@subtitle \par
+  \begin{flushleft}
+    \noindent\sffamily\bfseries \@subtitle \par
+  \end{flushleft}
 \end{Large}
 \fi
 
@@ -146,13 +190,14 @@
   \fi
 \end{flushleft}
 \restoregeometry
-
-\pagenumbering{roman}
-\clearpage
+\cleardoublepage
 }
 
 
-\newcommand{\frontmatter}{} % NoOP
+\newcommand{\frontmatter}{
+  \pagenumbering{roman}
+  \setcounter{page}{1}
+}
 
 \newcommand{\mainmatter}{
   \cleardoublepage
