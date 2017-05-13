@@ -22,6 +22,7 @@ We end the thesis with some general remarks and ideas for future work.
 \section{Discussion}
 We have seen that the model is indeed able to improve on the input posteriors.
 In particular, the model improves the across-speaker performance, with little to no degradation of the within-speaker performance.
+It also produces more stable posteriors, as demonstrated in \cref{fig:model-output}.
 However, the Jensen-Shannon loss function used is shown to perform worse in general than coscos$^2$, possibly as a result of being more sensitive to the balancing of the same-class and different-class losses.
 This can be explained by the fact that the Jensen-Shannon divergence is not directly interpretable---for instance, it is not clear that a same-class divergence of $0.1$ is as good as a different-class divergence of $0.9$.
 On the other hand, the cosine difference is more readily (geometrically) interpretable.
@@ -31,7 +32,7 @@ The linear nature of the model means that the number of parameters is small, mak
 This is especially the case when imposing the entropy penalty, which can be seen as restricting the capacity of the model.
 The sparsity of the model additionally makes it more interpretable, providing insight into how exactly the input classes are mapped to the output.
 As the model naturally selects a subset of outputs to use, it is also insensitive to the number of output units chosen.
-Finally, the model is readily convertible into an exact mapping from input to output classes, resulting in a proper partitioning of the input classes.
+Finally, the model is readily convertible into an exact mapping from input to output classes, resulting in a proper partition of the input classes.
 
 Another feature of the model is that it can take any kind of probability distribution as input, with the only requirement being that the underlying true classes are disentangled in the input.
 This makes it possible to use any kind of probabilistic model that admits a discrete posterior distribution over classes or states, including e.g.\ Gaussian mixture models or hidden Markov models.

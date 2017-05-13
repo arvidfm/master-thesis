@@ -23,7 +23,7 @@
 
 \chapter{Introduction}
 \section{Background}
-Automatic speech recognition (ASR) is generally framed as a supervised task, where both audio data and the corresponding transcription is available, and the problem is to develop a model that can mimic this mapping from speech to text.
+Automatic speech recognition (ASR) is generally framed as a supervised task, where both acoustic speech data and the corresponding transcription is available, and the problem is to develop a model that can mimic this mapping from speech to text.
 However, developing such data is expensive, both in terms of time and money, as it involves painstakingly transcribing many hours of speech.
 As a result, there is a notable lack of high-quality data for speech recognition for a majority of languages around the world.
 An important question is thus whether it is possible to make use of untranscribed, or unlabelled, data to develop ASR for such low-resource languages.
@@ -31,12 +31,12 @@ Unsupervised learning in this manner may also provide insight into the linguisti
 
 We focus in particular on one aspect of unsupervised learning of speech, namely the discovery of phonetic classes, i.e.\ the basic speech sounds that make up all words in a language.
 While supervised speech recognition makes use of prior knowledge regarding what sounds are present in a language, in unsupervised acquisition of speech this knowledge is unavailable to us.
-This means that not only do we need to be able to discover what sounds make up each word in a recording without the use of a transcription---we need to discover what sounds are even possible to begin with.
+This means that not only do we need to be able to discover what sounds make up each word in a recording without the use of a transcription---we need to discover what sounds are even available in the language to begin with, as not all languages use the same sounds, nor are the same sounds contrastive in all languages.
 This is compounded by speaker variation, where there can be significant differences between the pronunciation of sounds by individual speakers, or even by the same speaker depending on e.g.\ the context of the sound.
-This variation makes approaches such as naive clustering unfeasible, as many of the discovered sounds are likely to be highly speaker-specific.
+This variation makes approaches such as naive clustering ineffective, as many of the discovered sounds are likely to be highly speaker-specific.
 
 Unsupervised speech acquisition is an area of active research.
-One source of research in this area is the Zero Resource Speech Challenge \parencite{versteegh2015zero}, which was developed with the goal of finding linguistic units (track 1) or longer recurring word-like fragments (track 2) in speech.
+One source of such research is the Zero Resource Speech Challenge \parencite{versteegh2015zero}, which was developed with the goal of finding linguistic units (track 1) or longer recurring word-like fragments (track 2) in speech.
 Models are to be trained using only speech data, voice activity information, and speaker identity information.
 The main goal of the first track of the challenge is to find robust representations of speech frames where sounds belonging to the same phonetic category are more similar than sounds belonging to different categories; this is also the approach we will take in this work.
 
@@ -66,22 +66,24 @@ The main goal of the first track of the challenge is to find robust representati
 	  (m1) edge[arr] (out3);
   \end{tikzpicture}
 
-  \caption{\label{fig:mapping}Mapping}
+  \caption{\label{fig:mapping}An example of merging speaker-specific (coloured) clusters by mapping them to (a subset of) the available outputs.
+  As we represent the input as a probability vector, each output is a simple sum of the input probabilities.}
 \end{figure}
 
-\todo[inline]{describe posteriorgrams here or earlier in the introduction?}
-
 We take inspiration from two of the most successful approaches so far: the clustering approach of \textcite{chen2015parallel} and the siamese network approach of \textcite{thiolliere2015hybrid}, described above.
-We pose the question of whether it is possible to combine the two approaches by first clustering the data in an unsupervised manner using a probabilistic model, and then improving the resulting posteriorgrams using speech fragment information.
-This way we are able to take advantage of both the whole unlabelled data set, and the smaller set of discovered fragments.
+We pose the question of whether it is possible to combine the two approaches.
+One way to do this is to first cluster the whole data set in a fully unsupervised manner, discovering latent classes from the data such that similar data points belong to the same latent class.
+By extracting a latent representation of the data from the clustering model, we can then improve on this representation using speech fragment information.
+This way we are able to take advantage of both the complete unlabelled data set, and the smaller set of discovered fragments.
 
-Many probabilistic models, such as Gaussian mixture models and hidden Markov models, have a concept of latent states or classes.
-We pose the problem of improving posteriorgrams from such a model as one of merging, or partitioning, these latent classes.
-A model that is trained in a fully unsupervised manner will generally learn classes that are largely speaker-specific.
-However, by making use of weak supervision in the form of speech fragment pairs we can merge these classes, yielding representations that are more speaker invariant.
+For this work we consider in particular probabilistic models such as Gaussian mixture models and hidden Markov models.
+These models express class membership in terms of probabilities, giving the posterior probability of each data point belonging to one of the latent classes.
+By representing each data point as a vector of these posterior probabilities, called a posteriorgram, the task of improving this representation can be framed as one of merging, or partitioning, the latent classes appropriately.
+Latent classes discovered through unsupervised training will generally be high speaker-specific.
+However, by merging the classes using weak supervision in the form of speech fragment pairs, we can construct classes that are more speaker invariant.
 
 A partitioning of classes can be viewed as finding a function which maps the original set of classes to a class set of lower cardinality, but finding this function is a discrete problem which is difficult to optimise for.
-However, a benefit of posteriorgrams is that the probability of an output class can be described as a simple sum of the probabilities of the classes that map to the class in question.
+However, a benefit of posteriorgrams is that the probability of an output class can be described as a simple sum of the probabilities of the input classes that map to the output in question, as illustrated in \cref{fig:mapping}.
 This means that the mapping function can be approximated using a continuous linear model which can be optimised through standard gradient descent.
 A linear model also has the added benefit of being more interpretable than deep networks such as that of \textcite{thiolliere2015hybrid}.
 While the approach of partitioning posteriorgrams is very reminiscent of \textcite{jansen2013weak}, the major difference is that in place of direct clustering of classes, we are instead trying to maximise the similarity/dissimilarity between pairs of speech fragments, which only indirectly results in a partitioning of the classes.
@@ -185,4 +187,5 @@ While the approach of partitioning posteriorgrams is very reminiscent of \textci
 
 Using such a linear model, we hope to use speech fragment information to improve on posteriorgrams obtained from an unsupervised probabilistic model.
 In particular we hope to use the model to construct more speaker-invariant posteriorgrams which can be used to discriminate between different linguistic units in a robust manner.
+An example of using the model can be seen in \cref{fig:model-output}; the model takes high-dimensional posteriorgrams describing a probability distribution over latent variables (classes) from a Gaussian mixture model, and outputs low-dimensional posteriorgrams which are more speaker invariant.
 We evaluate the model using the minimal-pair ABX task used for evaluation in the first track of the Zero Resource Speech Challenge.

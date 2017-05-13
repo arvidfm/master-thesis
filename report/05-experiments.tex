@@ -16,14 +16,13 @@
 
 \chapter{Experiments}
 \label{ch:experiments}
-\todo[inline]{figure with audio + transcription + posteriorgrams?}
 
 This chapter describes the application of the model described in \cref{ch:methods} to the task of unsupervised modelling of speech, and in particular the use of the model to improve posteriorgrams generated from a Gaussian mixture model.
 First the experimental setup is described, including the data used, the how the data is processed, and how the models are implemented.
-Next, a number of experiments aimed at tuning hyperparameters and comparing models are described.
-Finally, the models are evaluated using the minimal-pair ABX task.
+Next, a number of experiments aimed at tuning hyperparameters are described.
+Finally, we evaluate a number of models using the minimal-pair ABX task.
 
-\section{Experimental setup}
+\section{Data preparation}
 \subsection{Data}
 We evaluate our method using the data used by the 2015 Zero Resource Speech Challenge in the context of unsupervised learning of speech units.
 The challenge makes use of two corpora: The Buckeye corpus of conersational English \parencite{buckeyecorpus} and the NCHLT speech corpus of read Xitsonga \parencite{barnard2014nchlt}.
@@ -32,11 +31,11 @@ Additionally provided is voice activity information indicating segments containi
 
 \subsection{Generating the posteriorgrams}
 \label{sec:posteriorgrams}
-MFCCs features were extracted from the data using a frame window length of \SI{25}{\ms} which was shifted \SI{10}{ms} for each frame, an FFT resolution of 512 frequency steps, and 40 mel-spaced triangular filter banks.
+MFCC features were extracted from the data using a frame window length of \SI{25}{\ms} which was shifted \SI{10}{ms} for each frame, an FFT resolution of 512 frequency steps, and 40 mel-spaced triangular filter banks.
 13 coefficients with both delta and delta-delta features were used.
 The MFCCs corresponding to segments with voice activity were clustered using an implementation of a Gaussian mixture model (GMM) provided by scikit-learn \parencite{scikit-learn}.
 The GMM was trained using the expectation maximisation algorithm, using $M = 1024$ Gaussians with diagonal covariance matrices, for a maximum of 200 iterations.
-After training the posteriorgram for the $n$th frame is constructed as $\mat p_n = (p_n^1, p_n^2, \dots, p_n^{1024})$ where $p_n^i = p(z_i \mid \mat x_n)$ \todo{$z^n_i$ or $z_i$ better?} is the posterior probability of the $i$th class given the $n$th frame.
+Once training has finished the posteriorgram for the $n$th frame is constructed as $\mat p_n = (p_n^1, p_n^2, \dots, p_n^{1024})$ where $p_n^k = p(z_n = k \mid \mat x_n)$ is the posterior probability of the $k$th class given the $n$th frame.
 
 \subsection{Unsupervised term discovery}
 \label{sec:utd}
@@ -48,27 +47,29 @@ Pairs of sequences of similar frames are found by searching for diagonals in the
 Pairs of segments with a DTW score above a certain threshold are kept and clustered based on pairwise DTW similarity, resulting in a set of clusters of speech segments, or fragments, thought to be of the same class (e.g.\ word).
 
 This process yielded 6512 fragments and 3149 clusters for the Buckeye corpus, and 3582 fragments and 1782 clusters for the NCHLT Xitsonga corpus\footnote{The cluster files used for this work were generously provided by Roland Thiollière and Aren Jansen.}.
-For each cluster every possible pair of fragments was extracted from the collection of posteriorgrams retrieved from the GMM and aligned using DTW, yielding pairs of speech frames belonging to the same class.
-Let $K$ be the total number of pairs of fragments aligned.
+For each cluster we construct every possible pair of same-word fragments.
+For each pair we then align the corresponding GMM posteriorgrams using DTW, yielding pairs of speech frames belonging to the same class.
+Let $K$ be the total number of same-word fragment pairs aligned.
 To generate a set of pairs of frames belonging to different classes, $K$ fragments were sampled uniformly from the full collection of fragments.
-For each such fragments, another fragment was sampled uniformly from the fragments belonging to a different cluster.
-When sampling fragments belonging to a different cluster, the sampling was performed using only either fragments spoken by the same speaker, or fragments spoken by a different speaker, with a probability corresponding to the ratio of same-speaker to different-speaker pairs among the same-class fragment pairs.
-The different-class fragment pairs were aligned by simply truncating the longer fragment.
+For each such fragment, another fragment was sampled uniformly from the fragments belonging to a different cluster.
+When sampling fragments belonging to a different cluster, the sampling was performed using only either fragments spoken by the same speaker, or fragments spoken by a different speaker, with a probability corresponding to the ratio of same-speaker to different-speaker pairs among the same-word fragment pairs.
+The different-word fragment pairs were aligned by simply truncating the longer fragment.
 
 70\% of the same-class and different-class fragment pairs were used for training, with the remaining pairs used for validation to determine when to interrupt the training of the models.
 
+\section{Experimental setup}
 \subsection{Model implementation}
-\todo[inline]{mention server specification? cpu/ram/gpu}
 
-We used $D = 64$ outputs for all models.
+For the models tested, the number of available outputs needs to be set a priori.
+We used $D = 64$ outputs for all models unless otherwise stated.
 The models were trained using AdaMax \parencite{kingma2014adam} with the recommended default parameters $\alpha = 0.002$, $\beta_1 = 0.9$ and $\beta_2 = 0.999$.
 All frames used for training were shuffled once at the start of training, and a minibatch size of 1000 frames was used.
 The models were trained until no improvement had been observed on a held-out validation set for 15 epochs, where one epoch is defined as one complete scan over the training data.
 
 All network models were implemented in Python 3.5 using Theano \parencite{theano} for automatic differentiation and GPU acceleration, librosa \parencite{librosa} for feature extraction, scikit-learn \parencite{scikit-learn} for various utilities, and numba \parencite{numba} for accelerating various code, in particular dynamic time warping.
-The training was performed on a GeForce GTX TITAN with 6~GB VRAM and 12 Intel i7-5930K cores clocked at 3.50~GHz, with 64~GB RAM.
+The training was performed on a GeForce GTX TITAN\footnote{The GeForce GTX TITAN used in this research was donated by the NVIDIA Corporation.} with 6~GB VRAM and 12 Intel i7-5930K cores clocked at 3.50~GHz, with 64~GB RAM.
 
-\section{Tuning the entropy penalty}
+\subsection{Tuning the entropy penalty}
 \begin{figure}
   \centering
   \begin{tikzpicture}
@@ -103,7 +104,7 @@ For both data sets, the entropy drops quickly even for small $\lambda$, suggesti
 As $\lambda$ is increased beyond $0.1$, the entropy loss itself does not decrease significantly; however, the different-class JS loss decreases at the expense of the same-class JS loss. \todo{why?}
 For future experiments, a penalty of $\lambda = 0.1$ is used, as little improvement of the entropy is seen beyond this value for either data set.
 
-\section{Rebalanced loss function}
+\subsection{Rebalanced loss function}
 \label{sec:rebalanced-exp}
 When enforcing low entropy in the output distribution, the resulting weight matrix becomes sparse.
 For instance, after training the model with $\lambda = 0.1$, and inspecting the row-normalised matrix $\mat W$, we find that the largest element on each row is close to 1: on average across the 1024 rows $0.98$ for English and $0.92$ for Xitsonga.
@@ -124,28 +125,7 @@ Here we use the silhouette \parencite{rousseeuw1987silhouettes}, which makes use
 The silhouette ranges from -1 to 1, with a value close to 1 indicating that the clusters are well separated.
 Models were trained for $\alpha \in \{1, 1.5, 2, 2.5, 3, 3.5, 4\}$, with an entropy penalty hyperparameter of $\lambda = 0.1$.
 The silhouette was then calculated on a subset of 1000 of the fragment clusters, using the output of the trained models to represent the frames of the fragments.
-The similarity between to fragments was calculated as the DTW score using the symmetrise Kullback-Leibler divergence as a similarity measure between individual frames.
-
-\todo[inline]{is the below paragraph uninteresting? a bit too model-specific?}
-To easily get an estimate of the number of outputs used by the model, we also define the ``spread'' of the model as follows.
-We take the average of the $j$th column:
-\begin{equation}
-  q_j = \frac{1}{M} \sum_{i=1}^M w_{ij}.
-\end{equation}
-This represents the average mapping to the $i$th output.
-As $\mat W$ is row-normalised, the elements of $Q = (q_1, q_2, \dots, q_D)$ sum to 1, and we can thus treat $Q$ as describing a probability distribution.
-A uniform distribution ostensibly means that each output has the same number of inputs mapped to it, assuming a perfectly sparse weight matrix.
-Now consider the case where there are $K$ outputs such that the same number of inputs maps to each output, while no inputs map to any other outputs.
-The entropy of $Q$ is then given by
-\begin{equation}
-  H(Q) = - \sum_{i=1}^K \frac{1}{K} \log_2 \frac{1}{K} = \log_2 K.
-\end{equation}
-Solving for $K$ we have
-\begin{equation}
-  K = 2^{H(Q)},
-\end{equation}
-which is an approximation of the number of outputs used by the model, which we define as the spread.
-A value of $K$ close to $D$ is an indicator that all the outputs are being used equally, suggesting that it may be a good idea to increase the number of outputs.
+The similarity between to fragments was calculated as the DTW score using the symmetrised Kullback-Leibler divergence as a similarity measure between individual frames.
 
 \begin{figure}
  \centering
@@ -193,11 +173,11 @@ A value of $K$ close to $D$ is an indicator that all the outputs are being used 
  \caption{\label{fig:silhouette} Silhouette and spread for different weightings of the same-class and different-class losses.}
 \end{figure}
 
-\Cref{fig:silhouette} shows the silhouette and spread for different values of $\alpha$.
+\Cref{fig:silhouette} shows the silhouette, as well as the spread as defined in \cref{sec:spread}, for different values of $\alpha$.
 As one might expect, more emphasis on the different-class loss results in a higher spread, i.e.\ a larger number of output classes.
 The optimal value of $\alpha$ is found to be 1.5 for both data sets.
 
-\subsection{Model evaluation}
+\section{Evaluation}
 \label{sec:model-desc}
 We train two models, one with the non-rebalanced loss of \cref{eq:nonrebalanced} and the other with the rebalanced loss of \cref{eq:rebalanced} with $\alpha = 1.5$ to measure the influence of reweighting the losses.
 Both models are trained with an entropy penalty hyperparameter of $\lambda = 0.1$.
@@ -211,27 +191,27 @@ For comparison we train the same architecture, albeit with 100 sigmoid outputs i
 This is the architecture used by \textcite{thiolliere2015hybrid}.
 In place of posteriorgrams we use log-scale outputs of 40 mel-scaled filter banks, normalised to have zero mean and unit variance over the whole data set and with a context of 3 frames on both sides, for a total of 280 values as input to the deep networks.
 
-\section{ABX results}
-\begin{table}
+\subsection{ABX results}
+\begin{sidewaystable}
  \centering
  \begin{tabular}{llrrrrrr} \toprule
    && \multicolumn{3}{c}{English} & \multicolumn{3}{c}{Xitsonga} \\ \cmidrule(lr){3-5} \cmidrule(lr){6-8}
     & Model & Silhouette & Within & Across & Silhouette & Within & Across \\ \midrule
     Baseline & GMM posteriors & 0.008 & 12.3 & 23.8 & 0.066 & 11.4 & 23.2 \\ \midrule
-    Proposed models & %Real $\mat W$ ($\alpha = 1$) & 0.093 & 14.1 & 21.2 & 0.119 & 15.8 & 25.1 \\
+    Proposed & %Real $\mat W$ ($\alpha = 1$) & 0.093 & 14.1 & 21.2 & 0.119 & 15.8 & 25.1 \\
     Non-rebalanced & 0.089 & 14.2 & 21.4 & 0.111 & 16.5 & 25.6 \\
-    & Rebalanced ($\alpha = 1.5$) & 0.108 & 12.8 & 19.8 & 0.146 & 14.0 & 23.2 \\
+    models & Rebalanced ($\alpha = 1.5$) & 0.108 & 12.8 & 19.8 & 0.146 & 14.0 & 23.2 \\
     & Binary $\mat W$ & 0.124 & 12.0 & 19.3 & 0.170 & 12.7 & 21.9 \\
     & Binary output & 0.010 & 16.5 & 24.6 & 0.014 & 19.4 & 29.2 \\ \midrule
-    Related models & %Deep JS & -0.058 & 18.1 & 25.6 & 0.150 & 17.5 & 23.5 \\
+    Related & %Deep JS & -0.058 & 18.1 & 25.6 & 0.150 & 17.5 & 23.5 \\
     Deep JS & -0.370 & 22.4 & 28.2 & -0.320 & 18.2 & 24.8 \\
-    & Deep coscos$^2$ (own implementation) & 0.175 & 12.0 & 19.7 & 0.298 & 11.8 & 19.2 \\
+    models & Deep coscos$^2$ (own implementation) & 0.175 & 12.0 & 19.7 & 0.298 & 11.8 & 19.2 \\
     & Deep coscos$^2$ \parencite{thiolliere2015hybrid} & --- & 12.0 & 17.9 & --- & 11.7 & 16.6 \\
     & DPGMM + LDA \parencite{heck2016unsupervised} & --- & 10.6 & 16.0 & --- & 8.0 & 12.6 \\ \bottomrule
  \end{tabular}
 
  \caption{\label{tab:abx}ABX and silhouette results for the models described in \cref{sec:model-desc}.}
-\end{table}
+\end{sidewaystable}
 
 
 We use the ABX toolkit provided for the Zero Resource Speech Challenge \parencite{versteegh2015zero} for evaluating the models.

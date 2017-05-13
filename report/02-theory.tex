@@ -22,8 +22,8 @@ Topics covered include speech recognition, basic concepts in machine learning, a
 
 \section{Audio processing for speech recognition}
 
-An important step in most speech recognition applications is feature extraction: From a raw audio signal we wish to extract information (features) that can be used to effectively process or model the speech to achieve some desired result.
-As the exact types of features used vary depending on the model used and the goal of the application, this section will focus on some particularly common features used in speech recognition.
+An important step in most speech recognition applications is feature extraction: From a raw audio signal we wish to extract information (features) that can be used to efficiently process or model the speech to achieve some desired result.
+As the exact types of features used vary depending on the model and the goal of the application, this section will focus on some particularly common features used in speech recognition.
 Additionally, some standard methods of processing speech that take into consideration the sequential and dynamic nature of speech will be discussed.
 
 This section serves as a short introduction to signal processing for speech recognition.
@@ -51,14 +51,12 @@ X(k) = \sum_{n=0}^{N-1} x[n]e^{-j2\pi kn/N},
 \end{equation}
 where $j$ is the imaginary unit and $k \in [0, N-1]$ corresponds to the frequency $f = \frac{k}{N}f_s$, $f_s$ being the sampling frequency of the signal.
 The energy density, or the energy distribution over frequency, is given by $S(k) = \left|X(k)\right|^2$.
-The DFT can be calculated in $O(N \log N)$ asymptotic time using the fast Fourier transform (FFT) algorithm, especially in the case where $N$ is chosen to be a power of 2 \parencite{cooley1965algorithm}.
-
-\todo[inline]{sources for the paragraph below}
+The DFT can be calculated in $O(N \log N)$ asymptotic time using the fast Fourier transform (FFT) algorithm \parencite{cooley1965algorithm}.
 
 \begin{figure}
   \centering
   \input{figures/stft}
-  \caption{\label{fig:sftf}Example of running a short-time Fourier transform on a \SI{25}{\ms} section of a recording of the word ``bed''.
+  \caption{\label{fig:sftf}Example of running a Fourier transform on a \SI{25}{\ms} section of a recording of the word ``bed''.
   The dashed line shows the ``envelope'', or overall shape, of the energy spectrum.
   The peaks and valleys of the spectrum are characteristic of sonorant sounds such as vowels.}
 \end{figure}
@@ -68,7 +66,7 @@ In particular, it assumes that the signal is periodic, which is emphatically not
 However, a speech signal can be thought to be \emph{approximately periodic} over a very short time period.
 This gives rise to the so-called short-time Fourier transform (STFT), where the DFT is calculated repeatedly on short sections of the signal using a sliding window; see \cref{fig:sftf} for an example.
 A typical window length is \SI{25}{\ms}, and it is generally shifted forward about \SI{10}{\ms} between each DFT calculation.
-The result of the STFT is the 2D Fourier transform $X(m,k)$ over time step $m$ and frequency $k$, with corresponding energy density $S(m,k) = \left|X(k,m)\right|^2$.
+The result of the STFT is the 2D Fourier transform $X(m,k)$ over time step $m$ and frequency $k$, with corresponding energy density $S(m,k) = \left|X(m, k)\right|^2$.
 An illustration of the STFT can be seen in \cref{fig:spectrogram}.
 
 \begin{figure}
@@ -130,10 +128,10 @@ For instance, this is the case when modelling the features using multivariate Ga
 Unfortunately, the mel-scale filter bank outputs are \emph{not} decorrelated, as neighbouring frequencies tend to take on similar values in the energy spectrum.
 However, they can be made roughly decorrelated by taking the discrete cosine transform (DCT) of the logarithm of the filter bank outputs, given as
 \begin{equation}
-C(m,c) = \sum_{l=0}^{L-1} \log(E(m,l)) \cos\left[\frac{2\pi}{L}\left(l+\frac{1}{2}\right)c\right]
+C(m,c) = \sum_{l=0}^{L-1} \log(E(m,l)) \cos\left[\frac{\pi}{L}\left(l+\frac{1}{2}\right)c\right]
 \end{equation}
 for $c \in [0, L - 1]$.
-The DCT approximates the input using cosine waves in a similar manner to how the Fourier transform works, with each coefficient $c$ indicating how similar the input is to the cosine wave with frequency $c/L$\todo{true?}.
+The DCT approximates the input using cosine waves in a similar manner to how the Fourier transform works, with the $c$th coefficient at each time step indicating how similar the input is to a cosine wave with $c/2$ periods as $l$ goes from $0$ to $L-1$; for $c=0$ this wave is a constant function.
 
 The resulting values are known as the mel-frequency cepstral coefficients (MFCCs).
 Usually only the first 13 or so coefficients are used at each time step, i.e.\ the coefficients corresponding to $c \in [0, 12]$, once again reducing the dimensionality of the data.
@@ -153,7 +151,7 @@ Feature-based approaches, instead, incorporate temporal information directly int
 One simple way is to extend each speech frame to include not only the current frame, but also the neighbouring frames before feeding it to the model.
 For instance, if our features consisted of the outputs of a mel-scaled filter bank of size 40 at different time steps $m$ and we wanted to include a context of 2 frames in both directions it time, the frame at each $m$ would be extended to include the frames at $m-2$, $m-1$, $m$, $m+1$ and $m+2$, resulting in a feature vector of size $40\cdot5 = 200$ at each time step.
 
-Another feature-based approach is to include approximations of the temporal derivatives in the feature vector, most commonly the first-order (velocity) and second-order (accerelation) derivatives.
+Another feature-based approach is to include approximations of the temporal derivatives in the feature vector, most commonly the first-order (velocity) and second-order (acceleration) derivatives.
 Let $\mat y = (y_t)_{t=1}^N$ be a sequence of feature vectors, and $n$ the number of points on both sides of $y_t$ to use to approximate the temporal derivative at $t$.
 The approximate derivative, or \emph{delta} value, at $t$ is then given by
 \begin{equation}
@@ -161,6 +159,7 @@ The approximate derivative, or \emph{delta} value, at $t$ is then given by
 \end{equation}
 which is the formula used by toolkits such as HTK \parencite{young2005htk}.
 The second-order derivative, or the \emph{delta-delta} values, can be obtained by repeating the process using the delta values.
+A detailed derivation of this formula can be found in \cref{app:delta}.
 
 \subsection{Dynamic time warping}
 
@@ -184,7 +183,7 @@ with the base cases
   D(\mat X_{1:0}, \mat Y_{1:0}) &= 0 \\
   D(\mat X_{1:0}, \mat Y_{1:k}) = D(\mat X_{1:k}, \mat Y_{1:0}) &= \infty.
 \end{align}
-Padding with $\infty$ is required to ensure that the alignment starts with the first element in both sequences.
+Padding with $\infty$ is required to ensure that the alignment starts at the first elements of both sequences.
 
 The way the recurrence is defined enables evaluation of $D(\mat X, \mat Y)$ in $O(nm)$ time using dynamic programming.
 By saving backpointers during the calculation, it is also possible to retrieve the actual alignment.
@@ -195,14 +194,14 @@ Machine learning can roughly be described as the practice of automatically findi
 The learning process generally takes the form of setting up an appropriate mathematical or statistical model, and automatically changing the parameters of the model to fit the data.
 Machine learning is commonly employed in a variety of fields such as speech recognition, computer vision and natural language processing (NLP).
 
-Using text parsing in NLP as an example, machine learning provides several advantages over the classic approach of hand-engineered rules written by human experts, including:
-\todo[inline]{make better arguments}
-\begin{itemize}
- \item Grammatical rules are inferred based on actual data, rather than the expert's conception of how the language works.
- \item A computer can quickly go through an amount of data that would be far too vast for a human expert to analyse by hand.
- \item A machine learning model can incorporate statistical information learnt from large amounts of data, enabling it to return multiple possible interpretations along with confidence scores.
-\end{itemize}
-Similar advantages can be seen in other fields, such as speech recognition where it is simply not feasible to construct hand-written rules that can identify speech sounds from raw audio data.
+As an illustration of the benefits of machine learning, consider the field of computer vision, and in particular the task of recognising objects in photographs.
+While an object such as a tree is easy for a human to recognise, conditions such as lighting, camera equipment, and general noise can greatly effect the raw values of the pixels in a photo.
+This makes it difficult if not impossible to create hand-written rules to recognise objects, in terms of e.g. the colours of the pixels.
+This is in contrast to classical applications of artificial intelligence such as chess, where complete, noise-free information about the board state is available at all times, which facilitates hand-written heuristics or strategies such as exhaustive search.
+
+A machine learning model, on the other hand, can learn to recognise patterns, such as objects in images, without explicit instruction on how this recognition should be performed.
+By presenting the model with example data, e.g.\ in the form of input and expected output, the model automatically finds statistical patterns and relations in the data.
+This makes it possible to use vast amounts of data to quickly find patterns in complex data such as images or speech.
 
 This section will lightly touch upon machine learning concepts relevant to this thesis; for a proper introduction to the field, see \textcite{murphy2012machine}.
 
@@ -221,6 +220,11 @@ Without the ground truth we do not have a reference we can use to learn the mapp
 Instead, our task is reduced to trying to find patterns in the data, by for example identifying repeating segments in the speech that could possibly correspond to speech sounds, or even whole words.
 Note, however, that even if we are able to correctly identify words in the speech, we still do not know the corresponding orthographic transcription.
 This is an example of unsupervised learning.
+
+The difference between supervised and unsupervised learning is not always clear-cut, and some tasks can be considered more supervised than others.
+For instance, in speech recognition we may only have access to an orthographical transcription of a given utterance, with no information available regarding what sound the individual speech frames correspond to.
+On the other hand, in computer vision we often do know the true output for each individual input image.
+The amount of information available in the data strongly influences what kinds of models and algorithms are available at our disposal.
 
 \subsubsection{Regression}
 
@@ -291,7 +295,7 @@ The power of the model comes from combining a large amount of units to form a si
 
 This section is mainly concerned with a specific type of neural network, namely the feedforward neural network.
 The feedforward neural network is a regression function $f:X \to Y$ that takes an $n$-dimensional input $\mat x \in X$, $X \subseteq \mathbb{R}^n$ and returns an $m$-dimensional output $\mat y \in Y$, $Y \subseteq \mathbb{R}^m$.
-Though the model is inherently a regressor, representing both input and output as real values, feedforward neural networks have been successfully applied to e.g.\ classification by interpreting the output $\mat y$ as a probability distribution, defining the probability of $\mat x$ belonging to class $k$ as $P(k \mid \mat x) = y_k$.
+Though the model is inherently a regressor, representing both input and output as real values, feedforward neural networks have been successfully applied to e.g.\ classification by interpreting the output $\mat y$ as a probability distribution, defining the probability of $\mat x$ belonging to class $k$ as $p(k \mid \mat x) = y_k$.
 
 For a recent detailed text on ANNs in the context of deep learning, see \textcite{goodfellow2016deep}.
 
@@ -321,7 +325,7 @@ The interpretation of the bias is not wholly straightforward, but consider the c
 
 This model is known as \emph{linear regression}, or multivariate linear regression in the case of $m > 1$.
 The model defines an $n$-dimensional hyperplane for each $y_j$, independently of the other output variables.
-$y_j$ increases linearly along a steepest direction given by $\frac{\partial y_j}{\partial \mat x} = (w_{1j}, w_{2j}, \dots, w_{nj})$.
+$y_j$ increases linearly with respect to $\mat x$ along a steepest direction given by $\frac{\partial y_j}{\partial \mat x} = (w_{1j}, w_{2j}, \dots, w_{nj})$.
 
 \begin{figure}
   \centering
@@ -343,7 +347,7 @@ Linear regression can be generalised by inserting a so-called ``activation funct
 \end{equation}
 
 If $g$ is chosen to be the logistic function $g(\mat z)_j = \sigma(z_j)$, defined in \cref{eq:logistic}, this is known as \emph{logistic regression}.
-The logistic function constrains the output to the range of $(0,1)$, allowing $y_j$ to be interpreted as modelling the Bernoulli distribution $P(j=1 \mid \mat x)$.
+The logistic function constrains the output to the range of $(0,1)$, allowing $y_j$ to be interpreted as modelling the Bernoulli distribution $p(j=1 \mid \mat x)$.
 
 \subsection{Stacked linear models}
 
@@ -362,7 +366,7 @@ The logistic function constrains the output to the range of $(0,1)$, allowing $y
   \subref{fig:sep-nonlinear} Using a linear combination of the hidden units, the resulting decision boundary perfectly separates the two classes.}
 \end{figure}
 
-While the generalized model is powerful in its own right, it has fatal drawbacks for certain types of data.
+While the generalised model is powerful in its own right, it has fatal drawbacks for certain types of data.
 Consider the case of a one-dimensional output $y$ given by $y = g(\mat x \cdot \mat w + b)$, where $\mat w$ is a weight vector.
 Let $\mat v$ be a vector orthogonal to $\mat w$, so that $\mat v \cdot \mat w = 0$.
 We can now see that $y = g((\mat x + \mat v) \cdot \mat w + b) = g(\mat x \cdot \mat w + \mat v \cdot \mat w + b) = g(\mat x \cdot \mat w + b)$.
@@ -410,7 +414,7 @@ b^2 &= -0.5
 with $N = 2$, we obtain the previous example.
 
 The number of hidden layers to use in a network deserves some consideration.
-It has been shown that a feedforward network with a single hidden layer can approximate virtually any continuous function, as long as the number of hidden units is large enough \parencite{hornik1989multilayer}.
+It has been shown that a feedforward network with a single hidden layer can approximate a large class of continuous functions, as long as the number of hidden units is large enough \parencite{hornik1989multilayer}.
 However, theoretical results suggest that the complexity of the model in terms of the types of functions it is able to express grows exponentially in the number of layers, meaning that a shallow network with only one hidden layer would need to consist of an exponential number of hidden units to match the complexity of a deep architecture \parencite{montufar2014number}.
 
 \subsection{Activation functions}
@@ -439,7 +443,7 @@ When doing regression on the other hand, it is common to simply use a linear act
 
 It can be shown that a stacked model with linear activations in the hidden layers is equivalent to a shallow model with no hidden layers.
 Thus, it is vital that the activation function used for the hidden layers be non-linear.
-However, it can be advantageous to use a \emph{mostly linear} activation function, not least because both the function itself and its derivative becomes very fast to calculate.
+However, it can be advantageous to use a \emph{mostly linear} activation function, as the derivative of such a function will be constant or nearly constant for a large set of inputs, which allows the network to be trained more efficiently.
 
 Examples of mostly linear activation functions that have been shown to outperform other activation functions in many contexts include the rectified linear unit \parencite{glorot2011deep}:
 \begin{equation}
@@ -452,11 +456,11 @@ and the maxout unit \parencite{goodfellow2013maxout}:
 where $\max$ is performed element-wise, i.e.\ $\max(\mat u, \mat v)_i = \max(u_i, v_i)$.
 Note that the input to maxout is the output of the previous layer rather than a weighted sum; it is a generalisation of the ReLU, keeping multiple (not necessarily limited to only two) sets of weight and bias values.
 
-\todo[inline]{add source (german??) or remove as digression}
-\todo[inline]{weights play a large role too...}
-Historically it has also been common to use sigmoidal (S-shaped) functions such as the logistic function or $\tanh$ for hidden layers as well, as a way to approximate the spiking behaviour of biological neurons.
-However, a major issue with a sigmoidal activation function is that, in addition to being comparatively slow to compute, the derivative of the function quickly falls towards 0 as the function saturates for large positive and negative input values, which tends to occurr as training progresses.
-This causes training of the network to slow down, especially in networks with many hidden layers where the derivatives of multiple activation functions are multiplied, in a phenomenon known as the ``vanishing gradient'' problem.
+% \todo[inline]{add source (german??) or remove as digression}
+% \todo[inline]{weights play a large role too...}
+% Historically it has also been common to use sigmoidal (S-shaped) functions such as the logistic function or $\tanh$ for hidden layers as well, as a way to approximate the spiking behaviour of biological neurons.
+% However, a major issue with a sigmoidal activation function is that, in addition to being comparatively slow to compute, the derivative of the function quickly falls towards 0 as the function saturates for large positive and negative input values, which tends to occurr as training progresses.
+% This causes training of the network to slow down, especially in networks with many hidden layers where the derivatives of multiple activation functions are multiplied, in a phenomenon known as the ``vanishing gradient'' problem.
 
 \subsection{Training neural networks}
 
@@ -475,7 +479,7 @@ For single-class classification such that one output is 1 and all others 0, this
 for the $j$ such that $y_j = 1$.
 Minimising the cross-entropy between $\mat y$ and $\mat x$ is equivalent to minimising the Kullback--Leibler divergence between the points, making it appropriate as a loss function when interpreting the network output as a probability distribution.
 
-Regression often makes use of the mean squared error (sometimes multiplied by a factor of $\frac{1}{2}$) instead:
+Regression often makes use of the mean squared error instead:
 \begin{equation}
 L_{\mathrm{MSE}}(\mat \theta; \mat x, \mat y) = \lVert\hat {\mat y} - \mat y\rVert_2^2.
 \end{equation}
