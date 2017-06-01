@@ -30,12 +30,15 @@ This suggests that the model may be viable as a general post-processing step to 
 
 \begin{otherlanguage}{swedish}
   \begin{abstract}
-    Träutensilierna i ett tryckeri äro ingalunda en faktor där
-    trevnadens ordningens och ekonomiens upprätthållande, och dock är
-    det icke sällan som sorgliga erfarenheter göras ordningens och
-    ekon och miens därmed upprätthållande. Träutensilierna i ett
-    tryckeri äro ingalunda en oviktig faktor, för trevnadens
-    ordningens och och dock är det icke sällan.
+    Obevakad inlärning av tal innebär att automatiskt hitta mönster i tal, t~ex ord eller talljud, utan bevakning i form av ortografiska transkriptioner eller tidigare kunskap om språket.
+    Ett grundläggande problem är dock att obevakad talinlärning tenderar att hitta väldigt talar- och kontextspecifika representationer av tal.
+    Vi föreslår en metod för att förbättra kvaliteten av posteriorgram genererade med en obevakad modell, genom att partitionera de latenta klasserna funna av modellen.
+    Vi gör detta genom att träna en gles siamesisk modell för att hitta en linjär transformering av de givna posteriorgrammen, extraherade från den obevakade modellen, till lågdimensionella posteriorgram.
+    Den siamesiska modellen använder sig av talfragmentpar funna med obevakad ordupptäckning, där varje par består av fragment som antingen tillhör samma eller olika klasser.
+    Den färdigtränade modellen görs sedan om till en exakt partitionering av posteriorgrammen.
+    Vi följer Zero Resource Speech Challenge, och evaluerar modellen med hjälp av minimala ordpar-ABX-uppgiften.
+    Vi demonstrerar att vår metod avsevärt minskar posteriorgrammens dimensionalitet, samtidigt som posteriorgrammen blir mer talarinvarianta.
+    Detta antyder att modellen kan vara användbar som ett generellt extra steg för att förbättra probabilistiska akustiska särdrag från obevakade modeller.
   \end{abstract}
 \end{otherlanguage}
 

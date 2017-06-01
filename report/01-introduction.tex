@@ -79,7 +79,7 @@ This way we are able to take advantage of both the complete unlabelled data set,
 For this work we consider in particular probabilistic models such as Gaussian mixture models and hidden Markov models.
 These models express class membership in terms of probabilities, giving the posterior probability of each data point belonging to one of the latent classes.
 By representing each data point as a vector of these posterior probabilities, called a posteriorgram, the task of improving this representation can be framed as one of merging, or partitioning, the latent classes appropriately.
-Latent classes discovered through unsupervised training will generally be high speaker-specific.
+Latent classes discovered through unsupervised training will generally be highly speaker-specific.
 However, by merging the classes using weak supervision in the form of speech fragment pairs, we can construct classes that are more speaker invariant.
 
 A partitioning of classes can be viewed as finding a function which maps the original set of classes to a class set of lower cardinality, but finding this function is a discrete problem which is difficult to optimise for.
@@ -189,3 +189,4 @@ Using such a linear model, we hope to use speech fragment information to improve
 In particular we hope to use the model to construct more speaker-invariant posteriorgrams which can be used to discriminate between different linguistic units in a robust manner.
 An example of using the model can be seen in \cref{fig:model-output}; the model takes high-dimensional posteriorgrams describing a probability distribution over latent variables (classes) from a Gaussian mixture model, and outputs low-dimensional posteriorgrams which are more speaker invariant.
 We evaluate the model using the minimal-pair ABX task used for evaluation in the first track of the Zero Resource Speech Challenge.
+The minimal-pair ABX task aims to evaluate the quality of different representations of speech by ensuring that two utterances of the same word are more similar to each other than to a distinct but similar word.

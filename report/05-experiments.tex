@@ -101,7 +101,7 @@ Ideally, $\lambda$ should be the smallest value for which the entropy loss in mi
 We train models using $\lambda \in \{0, 0.05, 0.1, \dots, 0.3\}$ for both the English and Xitsonga data sets.
 The final validation errors for each model are reported in \cref{fig:entropy-penalty}.
 For both data sets, the entropy drops quickly even for small $\lambda$, suggesting that the entropy is relatively easy to optimise for.
-As $\lambda$ is increased beyond $0.1$, the entropy loss itself does not decrease significantly; however, the different-class JS loss decreases at the expense of the same-class JS loss. \todo{why?}
+As $\lambda$ is increased beyond $0.1$, the entropy loss itself does not decrease significantly; however, the different-class JS loss decreases at the expense of the same-class JS loss.
 For future experiments, a penalty of $\lambda = 0.1$ is used, as little improvement of the entropy is seen beyond this value for either data set.
 
 \subsection{Rebalanced loss function}
