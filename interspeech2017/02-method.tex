@@ -37,7 +37,7 @@ We then define the loss function over a minibatch $B$ as
   + \frac{\alpha}{(\alpha + 1)|B_0|}
   \sum_{i \in B_0} \underbrace{\left(1 - \sqrt{\mathrm{JS}(\hat{\mat x}_i || \hat{\mat y}_i)}\right)}_{\mbox{different-class}},
 \end{multline}
-where $\alpha$ is a hyperparameter determining how much to weigh the different-class loss over the same-class loss, and
+where $\alpha$ is a hyperparameter determining how much to weight the different-class loss over the same-class loss, and
 $\mathrm{JS}(\mat x || \mat y)$ is the Jensen-Shannon (JS) divergence defined as
 \begin{equation}
   \mathrm{JS}(\mat x || \mat y) = \frac{1}{2} \mathrm{KL}(\mat x || \mat m) + \frac{1}{2} \mathrm{KL}(\mat y || \mat m),
