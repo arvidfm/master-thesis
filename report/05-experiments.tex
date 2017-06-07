@@ -22,31 +22,31 @@ First the experimental setup is described, including the data used, the how the 
 Next, a number of experiments aimed at tuning hyperparameters are described.
 Finally, we evaluate a number of models using the minimal-pair ABX task.
 
-\section{Data preparation}
-\subsection{Data}
+\section{Data}
+%\subsection{Data}
 We evaluate our method using the data used by the 2015 Zero Resource Speech Challenge in the context of unsupervised learning of speech units.
 The challenge makes use of two corpora: The Buckeye corpus of conersational English \parencite{buckeyecorpus} and the NCHLT speech corpus of read Xitsonga \parencite{barnard2014nchlt}.
 For the challenge only a subset of the data is used, consisting of 12 speakers for a total of 5 hours of data for the Buckeye corpus, and 24 speakers for a total of 2.5 hours of data for the NCHLT Xitsonga corpus.
 Additionally provided is voice activity information indicating segments containing clean speech, as well as labels indicating the identity of the speaker.
 
-\subsection{Generating the posteriorgrams}
-\label{sec:posteriorgrams}
+%\subsection{Generating the posteriorgrams (to experimental setup/method)}
+%\label{sec:posteriorgrams}
 MFCC features were extracted from the data using a frame window length of \SI{25}{\ms} which was shifted \SI{10}{ms} for each frame, an FFT resolution of 512 frequency steps, and 40 mel-spaced triangular filter banks.
 13 coefficients with both delta and delta-delta features were used.
 The MFCCs corresponding to segments with voice activity were clustered using an implementation of a Gaussian mixture model (GMM) provided by scikit-learn \parencite{scikit-learn}.
 The GMM was trained using the expectation maximisation algorithm, using $M = 1024$ Gaussians with diagonal covariance matrices, for a maximum of 200 iterations.
 Once training has finished the posteriorgram for the $n$th frame is constructed as $\mat p_n = (p_n^1, p_n^2, \dots, p_n^{1024})$ where $p_n^k = p(z_n = k \mid \mat x_n)$ is the posterior probability of the $k$th class given the $n$th frame.
 
-\subsection{Unsupervised term discovery}
-\label{sec:utd}
+%\subsection{Unsupervised term discovery (to experimental setup/method)}
+%\label{sec:utd}
 
-Pairs of similar speech fragments were discovered using the system developed by \textcite{jansen2011efficient}, which serves as a baseline for the second track of the Zero Resource Speech Challenge.
+\textit{TODO: Pairs of similar speech fragments were discovered using the system developed by \textcite{jansen2011efficient}, which serves as a baseline for the second track of the Zero Resource Speech Challenge.
 The system works by calculating the approximate cosine similarity between pairs of frames of two input audio segments, based on discretised random projections of perceptual linear prediction (PLP) features.
 For efficiency only frames found using an approximate nearest neighbour search are compared, yielding a sparse similarity matrix.
 Pairs of sequences of similar frames are found by searching for diagonals in the similarity matrix, which are then aligned using dynamic time warping (DTW).
-Pairs of segments with a DTW score above a certain threshold are kept and clustered based on pairwise DTW similarity, resulting in a set of clusters of speech segments, or fragments, thought to be of the same class (e.g.\ word).
+Pairs of segments with a DTW score above a certain threshold are kept and clustered based on pairwise DTW similarity, resulting in a set of clusters of speech segments, or fragments, thought to be of the same class (e.g.\ word).}
 
-This process yielded 6512 fragments and 3149 clusters for the Buckeye corpus, and 3582 fragments and 1782 clusters for the NCHLT Xitsonga corpus\footnote{The cluster files used for this work were generously provided by Roland Thiollière and Aren Jansen.}.
+TODO: This process yielded 6512 fragments and 3149 clusters for the Buckeye corpus, and 3582 fragments and 1782 clusters for the NCHLT Xitsonga corpus\footnote{The cluster files used for this work were generously provided by Roland Thiollière and Aren Jansen.}.
 For each cluster we construct every possible pair of same-word fragments.
 For each pair we then align the corresponding GMM posteriorgrams using DTW, yielding pairs of speech frames belonging to the same class.
 Let $K$ be the total number of same-word fragment pairs aligned.
@@ -58,16 +58,11 @@ The different-word fragment pairs were aligned by simply truncating the longer f
 70\% of the same-class and different-class fragment pairs were used for training, with the remaining pairs used for validation to determine when to interrupt the training of the models.
 
 \section{Experimental setup}
-\subsection{Model implementation}
-
 For the models tested, the number of available outputs needs to be set a priori.
 We used $D = 64$ outputs for all models unless otherwise stated.
 The models were trained using AdaMax \parencite{kingma2014adam} with the recommended default parameters $\alpha = 0.002$, $\beta_1 = 0.9$ and $\beta_2 = 0.999$.
 All frames used for training were shuffled once at the start of training, and a minibatch size of 1000 frames was used.
 The models were trained until no improvement had been observed on a held-out validation set for 15 epochs, where one epoch is defined as one complete scan over the training data.
-
-All network models were implemented in Python 3.5 using Theano \parencite{theano} for automatic differentiation and GPU acceleration, librosa \parencite{librosa} for feature extraction, scikit-learn \parencite{scikit-learn} for various utilities, and numba \parencite{numba} for accelerating various code, in particular dynamic time warping.
-The training was performed on a GeForce GTX TITAN\footnote{The GeForce GTX TITAN used in this research was donated by the NVIDIA Corporation.} with 6~GB VRAM and 12 Intel i7-5930K cores clocked at 3.50~GHz, with 64~GB RAM.
 
 \subsection{Tuning the entropy penalty}
 \begin{figure}
@@ -106,13 +101,13 @@ For future experiments, a penalty of $\lambda = 0.1$ is used, as little improvem
 
 \subsection{Rebalanced loss function}
 \label{sec:rebalanced-exp}
-When enforcing low entropy in the output distribution, the resulting weight matrix becomes sparse.
+\textit{TODO: When enforcing low entropy in the output distribution, the resulting weight matrix becomes sparse.
 For instance, after training the model with $\lambda = 0.1$, and inspecting the row-normalised matrix $\mat W$, we find that the largest element on each row is close to 1: on average across the 1024 rows $0.98$ for English and $0.92$ for Xitsonga.
 We can thus inspect $\mat W$ to see how many of the $64$ outputs are actually being used by the model.
 We take the sum over each column of $\mat W$.
 This sum describes roughly how many inputs are mapped to each output.
 We find that for both English and Xitsonga, this sum is above $0.5$ for only a minority of outputs: 11 outputs for English, and 10 outputs for Xitsonga.
-For English, where $\mat W$ is particularly sparse, none of the other 53 sums even reach $0.05$.
+For English, where $\mat W$ is particularly sparse, none of the other 53 sums even reach $0.05$.}
 
 It seems that the entropy penalty naturally encourages the model to make use of only a subset of the outputs.
 However, the actual number of outputs used is not realistic in terms of how many phonemes one would expect to find in a language; it seems that the same-class loss is forcing too many input classes to merge.
@@ -177,9 +172,8 @@ The similarity between to fragments was calculated as the DTW score using the sy
 As one might expect, more emphasis on the different-class loss results in a higher spread, i.e.\ a larger number of output classes.
 The optimal value of $\alpha$ is found to be 1.5 for both data sets.
 
-\section{Evaluation}
-\label{sec:model-desc}
-We train two models, one with the non-rebalanced loss of \cref{eq:nonrebalanced} and the other with the rebalanced loss of \cref{eq:rebalanced} with $\alpha = 1.5$ to measure the influence of reweighting the losses.
+\subsection{To be decided}
+TODO: Move at beginning of section. We train two models, one with the non-rebalanced loss of \cref{eq:nonrebalanced} and the other with the rebalanced loss of \cref{eq:rebalanced} with $\alpha = 1.5$ to measure the influence of reweighting the losses.
 Both models are trained with an entropy penalty hyperparameter of $\lambda = 0.1$.
 We additionally construct an exact partition using the latter model, by binarising the weight matrix $\mat W$.
 Finally, we also evaluate how much performance is retained when further binarising the output of the model with binary $\mat W$.
@@ -191,7 +185,18 @@ For comparison we train the same architecture, albeit with 100 sigmoid outputs i
 This is the architecture used by \textcite{thiolliere2015hybrid}.
 In place of posteriorgrams we use log-scale outputs of 40 mel-scaled filter banks, normalised to have zero mean and unit variance over the whole data set and with a context of 3 frames on both sides, for a total of 280 values as input to the deep networks.
 
-\subsection{ABX results}
+\subsection{Model implementation}
+All network models were implemented in Python 3.5 using Theano \parencite{theano} for automatic differentiation and GPU acceleration, librosa \parencite{librosa} for feature extraction, scikit-learn \parencite{scikit-learn} for various utilities, and numba \parencite{numba} for accelerating various code, in particular dynamic time warping.
+The training was performed on a GeForce GTX TITAN\footnote{The GeForce GTX TITAN used in this research was donated by the NVIDIA Corporation.} with 6~GB VRAM and 12 Intel i7-5930K cores clocked at 3.50~GHz, with 64~GB RAM.
+
+\subsection{Evaluation}
+\label{sec:model-desc}
+We use the ABX toolkit provided for the Zero Resource Speech Challenge \parencite{versteegh2015zero} for evaluating the models.
+For the models with continuous output, the frame-based metric is chosen as the symmetrised Kullback-Leibler divergence (with the model output normalised as necessary).
+For the model with binary output, however, we use a distance of 0 for identical and 1 for non-identical vectors.
+
+
+\section{Results}
 \begin{sidewaystable}
  \centering
  \begin{tabular}{llrrrrrr} \toprule
@@ -213,10 +218,6 @@ In place of posteriorgrams we use log-scale outputs of 40 mel-scaled filter bank
  \caption{\label{tab:abx}ABX and silhouette results for the models described in \cref{sec:model-desc}.}
 \end{sidewaystable}
 
-
-We use the ABX toolkit provided for the Zero Resource Speech Challenge \parencite{versteegh2015zero} for evaluating the models.
-For the models with continuous output, the frame-based metric is chosen as the symmetrised Kullback-Leibler divergence (with the model output normalised as necessary).
-For the model with binary output, however, we use a distance of 0 for identical and 1 for non-identical vectors.
 
 The results of the ABX evaluation are shown in \cref{tab:abx}, along with the silhouette for each model.
 The silhouette is calculated as in \cref{sec:rebalanced-exp}; higher is better.
