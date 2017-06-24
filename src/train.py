@@ -85,7 +85,7 @@ def cos_loss(x1, x2, types, angular=False):
     return cos_cost
 
 def coscos2(x1, x2, types):
-    cossim = cos(x1, x2, types)
+    cossim = cos(x1, x2)
     coscos_cost = T.switch(types, (1 - cossim)/2, cossim**2)
     return coscos_cost
 
@@ -342,20 +342,20 @@ def discretize_model(model, model_output, discretize_output):
 def grid_search(hdf5file, inset, save_errors):
     data = hdf5file[inset]
 
-    train_iterator, *train_shared = prepare_data(data['train'], batch_size=1000)
-    valid_iterator, *valid_shared = prepare_data(data['valid'], batch_size=100000)
+    train_iterator, *train_shared = prepare_data(data['train'], batch_size=1000, chunk_size=200000)
+    valid_iterator, *valid_shared = prepare_data(data['valid'], batch_size=100000, chunk_size=200000)
 
     all_errors = []
     def run_once(outputs, entropy_penalty):
         inputlayer, mslayer, outlayer = prepare_model(data.data.shape[-1], 'shallow-rownorm',
                                                       outputs=outputs)
 
-        loss_function = lambda *x: js_loss(*x, entropy_penalty=entropy_penalty, V=mslayer._V)
-
         train_loss, *train_losses = prepare_loss(
-            inputlayer, outlayer, *train_shared, loss_function, train_pass=True)
+            inputlayer, outlayer, *train_shared, js_loss,
+            entropy_penalty=entropy_penalty, V=mslayer._V, lamb=1, train_pass=True)
         valid_loss, *valid_losses = prepare_loss(
-            inputlayer, outlayer, *valid_shared, loss_function)
+            inputlayer, outlayer, *valid_shared, js_loss,
+            entropy_penalty=entropy_penalty, V=mslayer._V, lamb=1, train_pass=False)
 
         full_trainer = theano.function([], [train_loss, *train_losses])
         full_validator = theano.function([], [valid_loss, *valid_losses])
