@@ -17,7 +17,7 @@
 \section{Related work}
 \label{ch:related-work}
 
-This \namecref{ch:related-work} provides a brief overview of recent research on unsupervised acoustic modelling.
+This \lcnamecref{ch:related-work} provides a brief overview of recent research on unsupervised acoustic modelling.
 The approaches discussed here can broadly be divided into two categories: frame-based approaches that infer the acoustic model directly from the speech frames, and term discovery-based approaches that first segment the speech into syllable- or word-like fragments, and afterwards try break these fragments into smaller subword units.
 See \cref{ch:theory} for a more detailed description of some of the concepts mentioned here.
 
@@ -52,13 +52,15 @@ After training, the speech frames are represented as posteriorgrams, which have 
 Despite the simple approach, this turned out to be the overall best-performing model in the first track of the 2015 Zero Resource Speech Challenge \parencite{versteegh2016zero}.
 \textcite{heck2016unsupervised} later further improved on the model by performing clustering in two stages, with an intermediate supervised dimensionality reduction step using the clusters derived from the first clustering step as target classes.
 
-\textcite{synnaeve2016temporal} use a siamese network to create an embedding where speech frames close to each other are considered to belong to the same subword unit, while distant speech frames are said to differ.
-A siamese network is a feedforward neural network that takes two inputs and adjusts its parameters to either maximise or minimise the similarity of the corresponding outputs \parencite{bromley1994signature}.
+\textcite{synnaeve2016temporal} use a siamese network to create an embedding of the speech frames.
+They make the assumption that frames close in time are of the same type, while frames more distant in time correspond to different sounds.
+A siamese network is an artificial neural network that takes two inputs and adjusts its parameters to either maximise or minimise the similarity of outputs corresponding to same-category and different-category sounds, respectively \parencite{bromley1994signature}.
 
 \subsection{Term discovery-based approaches}
 
 An alternative to the frame-based approach is to first find longer pairs of word-like fragments using unsupervised term discovery (UTD).
-These pairs can serve as constraints, since if both fragments in a pair correspond to the same word, then logically the sounds that make up the fragment pairs should be the same as well.
+These fragment pairs can be used to find sound-level correspondences, since if both fragments in a pair correspond to the same word, then logically the sounds that make up the two fragments should be the same as well.
+These sound-level correspondences can be used as constraints to encourage representations where frames of the same type are similar.
 The rationale is that while at the frame level the same speech sound can seem quite different between different speakers or even different realisations of the sound by the same speaker, patterns over a longer duration of time are easier to identify; this idea is illustrated in \textcite{jansen2013weak}.
 
 The methods discussed here generally use UTD systems based on the segmental dynamic time warping (S-DTW) developed by \textcite{park2008unsupervised}.

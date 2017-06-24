@@ -17,7 +17,7 @@
 \chapter{Method}
 \label{ch:methods}
 
-This \namecref{ch:methods} describes the shallow siamese network used to find a mapping from input posteriorgrams of high dimensionality to output posteriorgrams of lower dimensionality.
+This \lcnamecref{ch:methods} describes the shallow siamese network used to find a mapping from input posteriorgrams of high dimensionality to output posteriorgrams of lower dimensionality.
 The model is trained using same-class and different-class example pairs, with the goal of minimising (maximising) the Jensen-Shannon divergence between same-class (different-class) pairs.
 By enforcing low entropy in the output we encourage sparsity in the model, resulting in a function that approximately maps each input class to a unique output class.
 
@@ -26,11 +26,13 @@ Given two input vectors $\mat x$ and $\mat y$, we wish to determine whether the 
 In the context of speech learning, these vectors might represent two different speech frames, and we wish to find whether they correspond to the same underlying phoneme (speech sound) or not.
 To do so, we project the vectors onto an embedding space designed so that vectors belonging to the same class are close, while vectors belonging to different classes are distant.
 We consider in particular posteriorgrams---probability vectors $\mat p = (p_1, \dots, p_M)$ representing a posterior distribution over $M$ discrete values.
-The probabilities in $\mat p$ sum to $1$, with $p_i$ being the probability of the $i$th value; for instance, it could be the probability that a data point belongs to the $i$th latent class as inferred by a Gaussian mixture model.
+The probabilities in $\mat p$ sum to $1$, with $p_i$ being the probability of the $i$th value. 
+In this work, each probability corresponds to a latent class inferred by a Gaussian mixture model (GMM) trained on the full unlabelled data set.
 
 We take as input a set $\{(\mat x_i, \mat y_i)\}_{i=1}^N$ of $N$ pairs of $M$-dimensional posteriorgrams.
 We assume that the $M$ input probabilities correspond to ``pseudo''-classes (e.g.\ allophones---variants of the same underlying phoneme), where several pseudo-classes together describe a single ``true class'' (e.g.\ phonemes).
-Our goal is then to find a function $f$ that maps the $M$ pseudo-classes to a smaller set of $D$ output classes, where we take the probability of a single output class to be the sum of the probabilities of the pseudo-classes that map to the output class in question.
+Our goal is then to find a function $f$ that maps the $M$ pseudo-classes to a smaller set of $D$ output classes.
+We take the probability of a single output class to be the sum of the probabilities of the pseudo-classes that map to the output class in question.
 This can also be thought of as finding a partition of the input classes.
 It is vital that no two underlying classes are represented by the same input class, as our mapping would not be able to separate the classes.
 
@@ -39,13 +41,13 @@ To help us achieve this, we in addition to the input data have a set of indicato
 We can then restate our goal as finding a mapping where $\mat x_i$ and $\mat y_i$ are close in output space if $c_i = 1$, and distant if $c_i = 0$.
 Note that this is different from fully supervised learning, where we know the true class corresponding to each input, since we for each pair only know that the corresponding inputs belong to the same class---we do not know what this class actually is.
 
-To simplify optimisation we relax the problem to one of finding a linear transformation $f : [0,1]^M \to [0,1]^D$ from the original space to a lower-dimensional space.
+To simplify optimisation we relax the problem to one of finding a linear transformation $f : [0,1]^M \to [0,1]^D$ from the original space of lower dimension.
 We consider each output probability to be a weighted combination of input probabilities: $f(\mat x)_j = \sum_{i=1}^M x_i w_{ij}$, or in matrix notation:
 \begin{equation}
  f(\mat x) = \mat x \mat W
 \end{equation}
 where $\mat W = (w_{ij}) \in \mathbb R^{M \times D}$.
-If the elements of $\mat W$ are constrained to only take on values in $\{0, 1\}$, and each row of $\mat W$ contains exactly one element with the value $1$, the problem is reduced to finding an exact mapping from input classes to output classes.
+If the elements of $\mat W$ are constrained to only take on values in $\{0, 1\}$, and each row of $\mat W$ contains exactly one element with the value $1$, $\mat W$ corresponds to an exact partitioning of the input; however, these constraints do not facilitate optimisation using gradient descent.
 
 Even in the relaxed version of the problem, we need to put certain constraints on $\mat W$ in order to ensure that the output $f(\mat x)$ is a posteriorgram.
 First, we need to ensure that all outputs are positive.
@@ -71,7 +73,7 @@ Note that the absolute value is almost everywhere differentiable, and the non-di
 
 To encourage the model to place points belonging to the same class close together in the output space, we consider the model as a siamese network.
 Conceptually this involves duplicating the model, creating two identical copies of the same network, with the parameters shared.
-We then feed one input each to both copies, and calculate the loss function using the corresponding outputs:
+We then take two inputs, $\mat x$ and $\mat y$, feed each of the inputs to one of the copies, and calculate the loss function using the corresponding outputs:
 \begin{equation}
   L_{\mathrm D}(\mat V; \mat x, \mat y, c) = \begin{cases}D_{\mathrm{same}}(f(\mat x; \mat V), f(\mat y; \mat V)) & \text{if } c = 1 \\
     D_{\mathrm{diff}}(f(\mat x; \mat V), f(\mat y; \mat V)) & \text{if } c = 0\end{cases}
@@ -103,25 +105,39 @@ where $\mat m = (\mat x + \mat y)/2$.
 The JS divergence is symmetric, always defined, and is bounded between $0$ (for identical distributions) and $1$ (for distributions with disjoint support), assuming that the base 2 logarithm is used.
 Additionally, the square root of the JS divergence is a metric satisfying the triangle inequality \parencite{endres2003new}; here we make use of this fact, in the hope that the metric properties will result in a more well-behaved loss function.
 
-Thus, we define
+Letting $\hat{\mat x} = f(\mat x; \mat V)$ and $\hat{\mat y} = f(\mat y; \mat V)$, we thus define
 \begin{align} \label{eq:js-loss}
-  D_{\mathrm{same}}(\mat x, \mat y) &= \sqrt{\mathrm{JS}(\mat x || \mat y)} \\
-  D_{\mathrm{diff}}(\mat x, \mat y) &= 1 - \sqrt{\mathrm{JS}(\mat x || \mat y)}
+  D_{\mathrm{same}}(\hat{\mat x}, \hat{\mat y}) &= \sqrt{\mathrm{JS}(\hat{\mat x} || \hat{\mat y})} \\
+  D_{\mathrm{diff}}(\hat{\mat x}, \hat{\mat y}) &= 1 - \sqrt{\mathrm{JS}(\hat{\mat x} || \hat{\mat y})}
 \end{align}
-thereby minimising the root JS divergence between pairs belonging to the same class, and maximising the divergence between pairs belonging to different classes\footnote{For identical or near-identical $\mat x$ and $\mat y$, the JS divergence may become negative due to rounding errors caused by limited floating point precision; this can be counteracted by adding a small constant value before taking the square root.}.
+thereby minimising the root JS divergence between pairs belonging to the same class, and maximising the divergence between different-class pairs\footnote{For identical or near-identical $\mat x$ and $\mat y$, the JS divergence may become negative due to rounding errors caused by limited floating point precision; this can be counteracted by adding a small constant value before taking the square root.}.
 
-\section{Balancing same-class and different-class losses}
+\section{Balancing the same-class and different-class losses}
 The above definition of the loss function is sensitive to the ratio of same-class to different-class pairs within a minibatch.
 To study the effect of giving different weight to the same-class and different-class losses, we consider the following alternative loss function.
 Let $B_1 = \{i \in B : c_i = 1\}$ be the subset of same-class pairs in the current minibatch, and $B_0 = \{i \in B : c_i = 0\}$ the subset of different-class pairs.
 We then restate the loss as
-\begin{equation}
+\begin{align}
   \label{eq:rebalanced}
-  L_{\mathrm D}(\mat V; B) = \frac{1}{(\alpha + 1)|B_1|} \sum_{i \in B_1} D_{\mathrm{same}}(\hat{\mat x}_i, \hat {\mat y}_i) + \frac{\alpha}{(\alpha + 1)|B_0|} \sum_{i \in B_0} D_{\mathrm{diff}}(\hat {\mat x}_i, \hat {\mat y}_i),
-\end{equation}
-where $\hat{\mat x}_i = f(\mat x_i; \mat V)$ and $\hat{\mat y}_i = f(\mat y_i; \mat V)$.
-$\alpha$ is a hyperparameter specifying how much more to weight the different-class loss over the same-class loss.
+  L_{\mathrm D}(\mat V; B) &= \frac{1}{(\alpha + 1)|B_1|} \sum_{i \in B_1} D_{\mathrm{same}}(\hat{\mat x}_i, \hat {\mat y}_i) \nonumber \\
+  &\phantom{=} + \frac{\alpha}{(\alpha + 1)|B_0|} \sum_{i \in B_0} D_{\mathrm{diff}}(\hat {\mat x}_i, \hat {\mat y}_i),
+\end{align}
+where $\alpha$ is a hyperparameter specifying how much more to weight the different-class loss over the same-class loss.
 A small $\alpha$ will emphasise the same-class loss, bringing the output vectors closer in output space, while a large $\alpha$ will cause the output vectors to be placed further apart on average.
+
+\subsection{Tuning the rebalanced loss function}
+\label{sec:tuning-rebalanced}
+
+\Cref{eq:rebalanced} introduces a new hyperparameter which needs to be tuned.
+In order to find a good value for $\alpha$ without making use of the gold transcription or prior knowledge of the languages in question, we make use of the fragment clusters discovered by the unsupervised term discovery system described in \cref{sec:utd}.
+The intuition is that the goal of our model is to push apart different clusters, while keeping fragments within a cluster as similar as possible.
+To measure the success of our model, then, we can make use of a cluster separation measure.
+
+Here we use the silhouette \parencite{rousseeuw1987silhouettes}, which calculates the average similarity between a sample and every other sample in the same cluster, and between a sample and every sample in the most similar other cluster.
+Based on this, a final silhouette score which ranges from -1 to 1 is calculated, with a value close to 1 indicating that the clusters are well separated.
+The similarity between two fragments is calculated as the DTW score using the symmetrised Kullback-Leibler divergence as a similarity measure between individual frames.
+An advantage of the silhouette, and the main reason that it is used here, is that it can be calculated using only a similarity matrix, without having to make assumptions about the geometry of the input space.
+This is what enables us to use the DTW score as the similarity measure.
 
 \section{Entropy penalty}
 
@@ -186,6 +202,25 @@ which can be used in general an approximation of the number of outputs used by t
 This can, for instance, be used to gauge the behaviour of the model as $\alpha$ is varied.
 A value of $K$ close to $D$ is an indicator that all the outputs are being used by the model, suggesting that it may be a good idea to increase the number of available outputs.
 
+\section{Discovering same-class frame pairs}
+\label{sec:utd}
+
+Pairs of similar speech fragments are discovered using the system developed by \textcite{jansen2011efficient}, which serves as a baseline for the second track of the Zero Resource Speech Challenge.
+The system works by calculating the approximate cosine similarity between pairs of frames of two input audio segments, based on discretised random projections of perceptual linear prediction (PLP) features.
+For efficiency only frames found using an approximate nearest neighbour search are compared, yielding a sparse similarity matrix.
+Pairs of sequences of similar frames are found by searching for diagonals in the similarity matrix, which are then aligned using dynamic time warping (DTW).
+Pairs of segments with a DTW score above a certain threshold are kept and clustered based on pairwise DTW similarity, resulting in a set of clusters of speech segments, or fragments, thought to be of the same category (e.g.\ word).
+For each cluster we construct every possible pair of same-word fragments.
+For each pair we then align the corresponding GMM posteriorgrams using DTW, yielding pairs of speech frames belonging to the same class.
+
+To generate a set of pairs of frames belonging to different classes, we first sample one fragment for every same-word fragment pair aligned.
+The sampling is performed uniformly over the full collection of fragments.
+For each sampled fragment, another fragment is sampled uniformly from the fragments belonging to a different cluster.
+The rationale is that fragments belonging to different clusters likely correspond to different words, and we assume that two different words chosen at random are unlikely to contain many of the same sounds in the same order.
+When sampling a fragment belonging to a different cluster, the sampling is performed using only either fragments spoken by the same speaker, or fragments spoken by a different speaker, with a probability corresponding to the ratio of same-speaker to different-speaker pairs among the same-word fragment pairs.
+This is done in order to ensure that the same-speaker to different-speaker ratio is the same for both the same-word and different-word fragment pairs.
+The different-word fragment pairs are aligned by simply truncating the longer fragment.
+
 \section{Evaluation}
 
 We evaluate the models on the minimal-pair ABX task \parencite{schatz2013evaluating}.
@@ -193,5 +228,8 @@ In the task we are presented with three speech fragments A, B and X, where A and
 The task is to decide which of either A or B belongs to the same category as X.
 This is done by aligning A and B with X using DTW with respect to some underlying frame-based metric.
 The fragment closest to X according to the DTW score is chosen.
+For the models with continuous output, the frame-based metric is chosen as the symmetrised Kullback-Leibler divergence (with the model output normalised as necessary).
+For the model with binary output, however, we use a distance of 0 for identical and 1 for non-identical vectors.
+
 The task takes two forms: within-speaker discriminability, where all fragments belong to the same speaker, and across-speaker discriminability, where A and B belong to one speaker while X belongs to another.
 The final score is the percentage of triples for which the wrong fragment was chosen as being of the same category as X.

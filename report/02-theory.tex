@@ -17,21 +17,21 @@
 \chapter{Theory}
 \label{ch:theory}
 
-This \namecref{ch:methods} provides an overview of topics that serve as a base for the rest of the thesis.
+This \lcnamecref{ch:methods} provides an overview of topics that serve as a base for the rest of the thesis.
 Topics covered include speech recognition, basic concepts in machine learning, and artificial neural networks.
 
-\section{Audio processing for speech recognition}
+\section{Processing speech signals}
 
 An important step in most speech recognition applications is feature extraction: From a raw audio signal we wish to extract information (features) that can be used to efficiently process or model the speech to achieve some desired result.
 As the exact types of features used vary depending on the model and the goal of the application, this section will focus on some particularly common features used in speech recognition.
 Additionally, some standard methods of processing speech that take into consideration the sequential and dynamic nature of speech will be discussed.
 
-This section serves as a short introduction to signal processing for speech recognition.
+This section serves as a short introduction to signal processing for speech recognition, and only covers the steps necessary to extract the features used to train the Gaussian mixture model used for this work, as well as dynamic time warping (DTW), which is used to find frame-level by aligning same-word fragments.
 For a more in-depth description, see a book on signal processing such as \textcite{quatieri2002discrete}, or see \textcite{huang2001spoken} for an introduction to speech recognition in particular.
 
 \subsection{Audio signals}
 
-In the real world speech takes the form of a pressure wave generated as air is pushed through the vocal tract.
+In the real world speech takes the form of a pressure wave generated when air is pushed through the vocal tract.
 The pressure wave as perceived from a single point in space can be described as a continuous signal $x(t), t\in \mathbb{R}$ that varies smoothly in time, with $x(t)$ at each time $t$ describing the amplitude of the wave relative to the ambient pressure.
 Our perception of the signal depends not on the absolute value of $x(t)$ at any given time instant, but rather on how it varies in time.
 As an example, take a simple sine wave $x(t) = \sin(2\pi f t)$; though the signal oscillates continuously in time, a human would perceive the signal as a single constant sound of frequency $f$.
@@ -147,7 +147,7 @@ Instead, the model needs some way of incorporating information about the context
 This can be done both at the model level and the feature level.
 Model-based approaches include hidden Markov models (HMMs), which encode information about how the speech can change in time in the form of probabilities, and recurrent neural networks (RNNs), which can take sequences as input and automatically find temporal patterns.
 
-Feature-based approaches, instead, incorporate temporal information directly into the features.
+Feature-based approaches, instead, include temporal information directly in the features.
 One simple way is to extend each speech frame to include not only the current frame, but also the neighbouring frames before feeding it to the model.
 For instance, if our features consisted of the outputs of a mel-scaled filter bank of size 40 at different time steps $m$ and we wanted to include a context of 2 frames in both directions it time, the frame at each $m$ would be extended to include the frames at $m-2$, $m-1$, $m$, $m+1$ and $m+2$, resulting in a feature vector of size $40\cdot5 = 200$ at each time step.
 
@@ -167,7 +167,7 @@ Rather than training a model to perform speech recognition, it is sometimes of i
 However, the dynamic nature of speech makes this difficult: A single speaker if asked to repeat a word two times will not pronounce the word exactly the same both times, and the length of the utterances will also differ slightly.
 Dynamic time warping (DTW) attempts to deal with this by finding the best alignment of the frames of the two utterances and measure the similarity based on this alignment.
 
-Let $d(\mat x, \mat y)$ be some local measure of the distance between the feature vectors $\mat x$ and $\mat y$ (e.g.\ the Euclidean distance) so that $d(\mat x, \mat y)$ is larger the further apart the feature vectors are.
+Let $d(\mat x, \mat y)$ be some local measure of the distance between the feature vectors $\mat x$ and $\mat y$, e.g.\ the Euclidean distance.
 Let $\mat X = \{\mat x_1, \mat x_2, \dots, \mat x_n\}$ and $\mat Y = \{\mat y_1, \mat y_2, \dots, \mat y_m\}$ be sequences of feature vectors, and let $\mat X_{k:l}$ denote the subsequence of $\mat X$ starting at $k$ and ending at $l$. 
 We wish to find a global distance measure $D(\mat X, \mat Y)$ as a sum of the local distances between the feature vectors, based on some alignment that minimises this distance.
 All elements in both sequences must be used in the final alignment, but elements may be repeated at will to serve as padding.
@@ -189,6 +189,7 @@ The way the recurrence is defined enables evaluation of $D(\mat X, \mat Y)$ in $
 By saving backpointers during the calculation, it is also possible to retrieve the actual alignment.
 
 \section{Machine learning}
+\label{sec:machine-learning}
 
 Machine learning can roughly be described as the practice of automatically finding patterns in data, and using these patterns to make future predictions or perform decision making.
 The learning process generally takes the form of setting up an appropriate mathematical or statistical model, and automatically changing the parameters of the model to fit the data.
@@ -203,7 +204,8 @@ A machine learning model, on the other hand, can learn to recognise patterns, su
 By presenting the model with example data, e.g.\ in the form of input and expected output, the model automatically finds statistical patterns and relations in the data.
 This makes it possible to use vast amounts of data to quickly find patterns in complex data such as images or speech.
 
-This section will lightly touch upon machine learning concepts relevant to this thesis; for a proper introduction to the field, see \textcite{murphy2012machine}.
+This \lcnamecref{sec:machine-learning} will lightly touch upon machine learning concepts relevant to this thesis, starting with general concepts needed to better understand the background of this work, along with a brief description of Gaussian mixture models, used in this work to generate features to serve as input to the proposed model.
+For a proper introduction to the field, see \textcite{murphy2012machine}.
 
 \subsection{Important concepts}
 \subsubsection{Supervised and unsupervised learning}
@@ -252,6 +254,7 @@ One example of clustering is the grouping of speech frames generated from an aud
 In some cases we do not have access to the true class corresponding to a data point, but we \emph{do} have information such as whether two given data points belong to the same class or not, or what context the data points appear in.
 Using this information we wish to project the data onto a new space where similar data points are close, while dissimilar points are distant.
 This projection is referred to as an embedding, and the techinque has seen use in areas such as face recognition, where faces are projected onto a space where similarity can be measured more easily, and natural language processing, where words, sentences or even whole documents are converted into real-valued vectors that capture some semantic information.
+In this work, the output of the proposed model can be seen as an embedded representation of the input speech frames.
 
 \subsection{K-means clustering}
 
@@ -262,7 +265,7 @@ Once the cluster centers converge (i.e.\ stop updating), the training stops.
 
 \subsection{Gaussian mixture models}
 
-While K-means clustering is simple to implement, it also makes some hidden assumptions, such as each cluster being spherical, which make it a bad fit for many types of data.
+While K-means clustering is simple to implement, it also makes some hidden assumptions, such as each cluster being spherical with the same variance, which do not hold for many types of real-world data, including speech data.
 A better assumption in many cases is that each data point was generated by one of $K$ multivariate Gaussian distributions, each Gaussian $k$ having mean $\boldsymbol \mu_k$ and covariance matrix $\boldsymbol \Sigma_k$.
 We denote the probability of the $k$th Gaussian generating a data point as $p(k \mid \boldsymbol \theta) = \pi_k$, where $\sum_{k=1}^K \pi_k = 1$.
 The probability of seeing a data point $\mat x$ is then described by
@@ -279,24 +282,26 @@ Clustering using a GMM is performed by initialising the parameters $\boldsymbol 
 See \textcite{murphy2012machine} for a detailed description of EM for GMMs.
 
 After training, the posterior distribution $p(k \mid \mat x, \boldsymbol \theta)$ can be calculated as
-\begin{equation}
+\begin{align}
 p(k \mid \mat x, \boldsymbol \theta)
-= \frac{p(k \mid \boldsymbol \theta)p(\mat x \mid k, \boldsymbol \theta)}{p(\mat x \mid \boldsymbol \theta)}
-= \frac{p(k \mid \boldsymbol \theta)p(\mat x \mid k, \boldsymbol \theta)}{\sum_{l=1}^K p(l \mid \boldsymbol \theta)p(\mat x \mid l, \boldsymbol \theta)}
-= \frac{\pi_k \mathcal{N}(\mat x; \boldsymbol \mu_k, \boldsymbol \Sigma_k)}{\sum_{l=1}^K \pi_l \mathcal{N}(\mat x; \boldsymbol \mu_l, \boldsymbol \Sigma_l)},
-\end{equation}
+&= \frac{p(k \mid \boldsymbol \theta)p(\mat x \mid k, \boldsymbol \theta)}{p(\mat x \mid \boldsymbol \theta)}
+= \frac{p(k \mid \boldsymbol \theta)p(\mat x \mid k, \boldsymbol \theta)}{\sum_{l=1}^K p(l \mid \boldsymbol \theta)p(\mat x \mid l, \boldsymbol \theta)} \nonumber \\
+&= \frac{\pi_k \mathcal{N}(\mat x; \boldsymbol \mu_k, \boldsymbol \Sigma_k)}{\sum_{l=1}^K \pi_l \mathcal{N}(\mat x; \boldsymbol \mu_l, \boldsymbol \Sigma_l)},
+\end{align}
 giving the probability of $\mat x$ belonging to class $k$.
 
 \section{Artificial neural networks}
+\label{sec:ann}
 
 Artificial neural networks (ANNs) are a family of machine learning models loosely inspired by biological neural networks.
-Though different types of ANNs function quite differently from each other, a common theme is that they are composed of a network of units, or neurons, each performing a relatively simple task.
+Though different types of ANNs function quite differently from each other, a common theme is that they are composed of a network of units, or neurons, each performing a relatively simple task such as a weighted sum.
 The power of the model comes from combining a large amount of units to form a single, complex model.
 
-This section is mainly concerned with a specific type of neural network, namely the feedforward neural network.
+This \lcnamecref{sec:ann} is mainly concerned with a specific type of neural network, namely the feedforward neural network.
 The feedforward neural network is a regression function $f:X \to Y$ that takes an $n$-dimensional input $\mat x \in X$, $X \subseteq \mathbb{R}^n$ and returns an $m$-dimensional output $\mat y \in Y$, $Y \subseteq \mathbb{R}^m$.
 Though the model is inherently a regressor, representing both input and output as real values, feedforward neural networks have been successfully applied to e.g.\ classification by interpreting the output $\mat y$ as a probability distribution, defining the probability of $\mat x$ belonging to class $k$ as $p(k \mid \mat x) = y_k$.
 
+We describe both linear models, which the model proposed in this work builds upon, and deep models, which one of the related models described is based on, with the training procedure being similar for both types of models.
 For a recent detailed text on ANNs in the context of deep learning, see \textcite{goodfellow2016deep}.
 
 \subsection{Linear models}
@@ -371,7 +376,7 @@ Consider the case of a one-dimensional output $y$ given by $y = g(\mat x \cdot \
 Let $\mat v$ be a vector orthogonal to $\mat w$, so that $\mat v \cdot \mat w = 0$.
 We can now see that $y = g((\mat x + \mat v) \cdot \mat w + b) = g(\mat x \cdot \mat w + \mat v \cdot \mat w + b) = g(\mat x \cdot \mat w + b)$.
 In other words, \textbf{linear models can only discriminate between data points along the axis defined by the weight vector}.
-As a result of this, the model's decision boundaries will all be linear and parallel, meaning that it will only be able to classify data that is \emph{linearly seperable}.
+As a result, the model's decision boundaries are all linear and parallel, meaning that it is only able to classify data that is \emph{linearly seperable}.
 The problem is illustrated in \crefrange{fig:sep-linear}{fig:sep-gaussian}.
 
 However, we can extend our model to enable it to handle more complex data, by stacking several linear models on top of each other.
@@ -396,10 +401,11 @@ As can be seen in \crefrange{fig:sep-hidden1}{fig:sep-nonlinear}, this allows us
 In general, our stacked model can be defined as
 \begin{align}
  \mat y^0 &= \mat x \\
- \mat y^l &= g^l(\mat y^{l-1} \mat W^l + \mat b^l) \quad l \in [1, N] \\
+ \mat z^l &= \mat y^{l-1} \mat W^l + \mat b^l \\
+ \mat y^l &= g^l(\mat z^l) \\
  \mat y &= \mat y^N
 \end{align}
-where $N$ is the number of hidden or output layers, and $g^l$, $\mat W^l \in \mathbb{R}^{n^{l-1} \times n^l}$, $\mat b^l \in \mathbb{R}^{1 \times n^l}$ and $n^l$ are the activation function, weight matrix, bias vector and layer size (in number of units) corresponding to layer $l$, respectively.
+where $l \in [1, N]$; $N$ is the number of hidden or output layers, and $g^l$, $\mat W^l \in \mathbb{R}^{n^{l-1} \times n^l}$, $\mat b^l \in \mathbb{R}^{1 \times n^l}$ and $n^l$ are the activation function, weight matrix, bias vector and layer size (in number of units) corresponding to layer $l$, respectively.
 This is known as a \emph{feedforward artificial neural network}; see \cref{fig:feedforward} for a graphical representation.
 By setting
 \begin{align}
@@ -424,7 +430,7 @@ Typically, however, all hidden layers use the same activation function, with the
 
 \subsubsection{Output layers}
 
-For classification, an activation function that makes it possible to interpret the output as a one or more probability distributions is generally used.
+For classification, it is common to use an activation function that makes it possible to interpret the outputs as probabilities.
 A common choice is the softmax function, which normalises the output to sum to 1:
 \begin{equation}
 \mathrm{softmax}(\mat z)_i = \frac{e^{z_i}}{\sum_j e^{z_j}}.

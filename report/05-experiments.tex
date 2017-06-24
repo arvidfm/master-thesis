@@ -37,34 +37,45 @@ The MFCCs corresponding to segments with voice activity were clustered using an 
 The GMM was trained using the expectation maximisation algorithm, using $M = 1024$ Gaussians with diagonal covariance matrices, for a maximum of 200 iterations.
 Once training has finished the posteriorgram for the $n$th frame is constructed as $\mat p_n = (p_n^1, p_n^2, \dots, p_n^{1024})$ where $p_n^k = p(z_n = k \mid \mat x_n)$ is the posterior probability of the $k$th class given the $n$th frame.
 
-%\subsection{Unsupervised term discovery (to experimental setup/method)}
-%\label{sec:utd}
-
-\textit{TODO: Pairs of similar speech fragments were discovered using the system developed by \textcite{jansen2011efficient}, which serves as a baseline for the second track of the Zero Resource Speech Challenge.
-The system works by calculating the approximate cosine similarity between pairs of frames of two input audio segments, based on discretised random projections of perceptual linear prediction (PLP) features.
-For efficiency only frames found using an approximate nearest neighbour search are compared, yielding a sparse similarity matrix.
-Pairs of sequences of similar frames are found by searching for diagonals in the similarity matrix, which are then aligned using dynamic time warping (DTW).
-Pairs of segments with a DTW score above a certain threshold are kept and clustered based on pairwise DTW similarity, resulting in a set of clusters of speech segments, or fragments, thought to be of the same class (e.g.\ word).}
-
-TODO: This process yielded 6512 fragments and 3149 clusters for the Buckeye corpus, and 3582 fragments and 1782 clusters for the NCHLT Xitsonga corpus\footnote{The cluster files used for this work were generously provided by Roland Thiollière and Aren Jansen.}.
-For each cluster we construct every possible pair of same-word fragments.
-For each pair we then align the corresponding GMM posteriorgrams using DTW, yielding pairs of speech frames belonging to the same class.
-Let $K$ be the total number of same-word fragment pairs aligned.
-To generate a set of pairs of frames belonging to different classes, $K$ fragments were sampled uniformly from the full collection of fragments.
-For each such fragment, another fragment was sampled uniformly from the fragments belonging to a different cluster.
-When sampling fragments belonging to a different cluster, the sampling was performed using only either fragments spoken by the same speaker, or fragments spoken by a different speaker, with a probability corresponding to the ratio of same-speaker to different-speaker pairs among the same-word fragment pairs.
-The different-word fragment pairs were aligned by simply truncating the longer fragment.
-
+The unsupervised term discovery yielded 6512 fragments and 3149 clusters for the Buckeye corpus, and 3582 fragments and 1782 clusters for the NCHLT Xitsonga corpus\footnote{The cluster files used for this work were generously provided by Roland Thiollière and Aren Jansen.}.
 70\% of the same-class and different-class fragment pairs were used for training, with the remaining pairs used for validation to determine when to interrupt the training of the models.
 
 \section{Experimental setup}
-For the models tested, the number of available outputs needs to be set a priori.
-We used $D = 64$ outputs for all models unless otherwise stated.
-The models were trained using AdaMax \parencite{kingma2014adam} with the recommended default parameters $\alpha = 0.002$, $\beta_1 = 0.9$ and $\beta_2 = 0.999$.
-All frames used for training were shuffled once at the start of training, and a minibatch size of 1000 frames was used.
-The models were trained until no improvement had been observed on a held-out validation set for 15 epochs, where one epoch is defined as one complete scan over the training data.
 
-\subsection{Tuning the entropy penalty}
+\subsection{Models}
+\label{sec:models}
+
+We compare the following four shallow models:
+\begin{itemize}
+  \item A model trained with the non-rebalanced loss of \cref{eq:nonrebalanced}.
+  \item A model trained with the rebalanced loss of \cref{eq:rebalanced}, to measure the influence of reweighting the losses.
+  \item The rebalanced model, where we binarise the weight matrix $\mat W$ after training to produce an exact partition.
+  \item The model with binary $\mat W$, where we further binarise the output.
+\end{itemize}
+All shallow models use $D = 64$ outputs.
+The values chosen for the $\lambda$ and $\alpha$ hyperparameters are described in \cref{sec:tune-entropy,sec:rebalanced-exp}.
+
+To compare to the shallow models, we also train the following two deep models:
+\begin{itemize}
+ \item A network with $64$ softmax outputs, trained using the non-rebalanced JS loss, to get an idea of how the JS loss performs in general.
+ \item A network with $100$ sigmoid outputs, trained using the coscos$^2$ loss of \textcite{synnaeve2014phonetics}.
+\end{itemize}
+Both deep models use two hidden layers of $500$ sigmoid units each.
+The latter model corresponds to the architecture used by \textcite{thiolliere2015hybrid}.
+Note that we do not enforce any entropy penalty for the deep network trained with the JS loss, as the softmax outputs are naturally sparse.
+Additionally, no penalty is used when training using the coscos$^2$ loss.
+In place of posteriorgrams we use log-scale outputs of 40 mel-scaled filter banks, normalised to have zero mean and unit variance over the whole data set and with a context of 3 frames on both sides, for a total of 280 values as input to the deep networks.
+
+All models were trained using AdaMax \parencite{kingma2014adam} with the recommended default parameters $\alpha = 0.002$, $\beta_1 = 0.9$ and $\beta_2 = 0.999$.
+All frames used for training were shuffled once at the start of training, and a minibatch size of 1000 frames was used.
+The models were trained until no improvement had been observed on a held-out validation set for 15 epochs, where an epoch is defined as one use of the whole training data.
+
+All network models were implemented in Python 3.5 using Theano \parencite{theano} for automatic differentiation and GPU acceleration, librosa \parencite{librosa} for feature extraction, scikit-learn \parencite{scikit-learn} for various utilities, and numba \parencite{numba} for accelerating various code, in particular dynamic time warping.
+The training was performed on a GeForce GTX TITAN\footnote{The GeForce GTX TITAN used in this research was donated by the NVIDIA Corporation.} with 6~GB VRAM and 12 Intel i7-5930K cores clocked at 3.50~GHz, with 64~GB RAM.
+
+\subsection{Entropy penalty hyperparameter}
+\label{sec:tune-entropy}
+
 \begin{figure}
   \centering
   \begin{tikzpicture}
@@ -92,35 +103,15 @@ The average entropy of the output distribution over the validation samples is sh
 \end{figure}
 
 The entropy penalty hyperparameter $\lambda$ is a free parameter, which is data dependent and must be manually specified.
-Ideally, $\lambda$ should be the smallest value for which the entropy loss in minimised, or nearly minimised, to avoid sacrificing the Jensen-Shannon loss.
+Ideally, $\lambda$ should be the smallest value for which the entropy loss is minimised, or nearly minimised, to avoid sacrificing the Jensen-Shannon loss.
 We train models using $\lambda \in \{0, 0.05, 0.1, \dots, 0.3\}$ for both the English and Xitsonga data sets.
 The final validation errors for each model are reported in \cref{fig:entropy-penalty}.
 For both data sets, the entropy drops quickly even for small $\lambda$, suggesting that the entropy is relatively easy to optimise for.
 As $\lambda$ is increased beyond $0.1$, the entropy loss itself does not decrease significantly; however, the different-class JS loss decreases at the expense of the same-class JS loss.
-For future experiments, a penalty of $\lambda = 0.1$ is used, as little improvement of the entropy is seen beyond this value for either data set.
+For evaluation, we use $\lambda = 0.1$ to train our models, as little improvement of the entropy is seen beyond this value for either data set.
 
-\subsection{Rebalanced loss function}
+\subsection{Rebalanced loss function hyperparameter}
 \label{sec:rebalanced-exp}
-\textit{TODO: When enforcing low entropy in the output distribution, the resulting weight matrix becomes sparse.
-For instance, after training the model with $\lambda = 0.1$, and inspecting the row-normalised matrix $\mat W$, we find that the largest element on each row is close to 1: on average across the 1024 rows $0.98$ for English and $0.92$ for Xitsonga.
-We can thus inspect $\mat W$ to see how many of the $64$ outputs are actually being used by the model.
-We take the sum over each column of $\mat W$.
-This sum describes roughly how many inputs are mapped to each output.
-We find that for both English and Xitsonga, this sum is above $0.5$ for only a minority of outputs: 11 outputs for English, and 10 outputs for Xitsonga.
-For English, where $\mat W$ is particularly sparse, none of the other 53 sums even reach $0.05$.}
-
-It seems that the entropy penalty naturally encourages the model to make use of only a subset of the outputs.
-However, the actual number of outputs used is not realistic in terms of how many phonemes one would expect to find in a language; it seems that the same-class loss is forcing too many input classes to merge.
-We therefore consider the restated loss of \cref{eq:rebalanced} so that more weight can be given to the different-class loss.
-In order to find a good value for $\alpha$, without making use of the gold transcription or prior knowledge of the number of phonemes present in the languages in question, we make use of the fragment clusters discovered by the unsupervised term discovery system.
-The intuition is that the goal of our model is to push apart different clusters, while keeping fragments within a cluster as similar as possible.
-To measure the success of our model, then, we can make use of a cluster separation measure.
-
-Here we use the silhouette \parencite{rousseeuw1987silhouettes}, which makes use of the average similarity between a sample and every other sample in the same cluster, and between a sample and every sample in the most similar other cluster.
-The silhouette ranges from -1 to 1, with a value close to 1 indicating that the clusters are well separated.
-Models were trained for $\alpha \in \{1, 1.5, 2, 2.5, 3, 3.5, 4\}$, with an entropy penalty hyperparameter of $\lambda = 0.1$.
-The silhouette was then calculated on a subset of 1000 of the fragment clusters, using the output of the trained models to represent the frames of the fragments.
-The similarity between to fragments was calculated as the DTW score using the symmetrised Kullback-Leibler divergence as a similarity measure between individual frames.
 
 \begin{figure}
  \centering
@@ -168,35 +159,64 @@ The similarity between to fragments was calculated as the DTW score using the sy
  \caption{\label{fig:silhouette} Silhouette and spread for different weightings of the same-class and different-class losses.}
 \end{figure}
 
+We use the silhouette to find the best setting of $\alpha$.
+Models were trained for $\alpha \in \{1, 1.5, 2, 2.5, 3, 3.5, 4\}$, where we fix the entropy penalty hyperparameter to $\lambda = 0.1$.
+The silhouette is calculated on a subset of 1000 of the fragment clusters, using the output of the trained models to represent the frames of the fragments.
 \Cref{fig:silhouette} shows the silhouette, as well as the spread as defined in \cref{sec:spread}, for different values of $\alpha$.
 As one might expect, more emphasis on the different-class loss results in a higher spread, i.e.\ a larger number of output classes.
-The optimal value of $\alpha$ is found to be 1.5 for both data sets.
-
-\subsection{To be decided}
-TODO: Move at beginning of section. We train two models, one with the non-rebalanced loss of \cref{eq:nonrebalanced} and the other with the rebalanced loss of \cref{eq:rebalanced} with $\alpha = 1.5$ to measure the influence of reweighting the losses.
-Both models are trained with an entropy penalty hyperparameter of $\lambda = 0.1$.
-We additionally construct an exact partition using the latter model, by binarising the weight matrix $\mat W$.
-Finally, we also evaluate how much performance is retained when further binarising the output of the model with binary $\mat W$.
-
-To compare to the shallow models, and to get an idea of how the JS loss performs in general, we also build a deep network with two hidden layers of $500$ sigmoid units each, with $64$ softmax outputs.
-The network is trained using the non-rebalanced JS loss.
-As softmax outputs are naturally sparse, we do not enforce any entropy penalty.
-For comparison we train the same architecture, albeit with 100 sigmoid outputs instead, using the coscos$^2$ loss of \textcite{synnaeve2014phonetics}.
-This is the architecture used by \textcite{thiolliere2015hybrid}.
-In place of posteriorgrams we use log-scale outputs of 40 mel-scaled filter banks, normalised to have zero mean and unit variance over the whole data set and with a context of 3 frames on both sides, for a total of 280 values as input to the deep networks.
-
-\subsection{Model implementation}
-All network models were implemented in Python 3.5 using Theano \parencite{theano} for automatic differentiation and GPU acceleration, librosa \parencite{librosa} for feature extraction, scikit-learn \parencite{scikit-learn} for various utilities, and numba \parencite{numba} for accelerating various code, in particular dynamic time warping.
-The training was performed on a GeForce GTX TITAN\footnote{The GeForce GTX TITAN used in this research was donated by the NVIDIA Corporation.} with 6~GB VRAM and 12 Intel i7-5930K cores clocked at 3.50~GHz, with 64~GB RAM.
-
-\subsection{Evaluation}
-\label{sec:model-desc}
-We use the ABX toolkit provided for the Zero Resource Speech Challenge \parencite{versteegh2015zero} for evaluating the models.
-For the models with continuous output, the frame-based metric is chosen as the symmetrised Kullback-Leibler divergence (with the model output normalised as necessary).
-For the model with binary output, however, we use a distance of 0 for identical and 1 for non-identical vectors.
-
+The optimal value of $\alpha$ is found to be 1.5 for both data sets, and we use this value when training the models to evaluate.
 
 \section{Results}
+
+\subsection{Overfitting}
+\begin{figure}
+ \centering
+ \begin{tikzpicture}
+  \begin{groupplot}[group style={group size=2 by 2, horizontal sep=2cm,vertical sep=2.2cm},
+    ymin=0,ymax=0.7,enlarge x limits=true,width=5cm,height=4cm,xlabel=Epoch,ylabel=Loss,no markers]
+    \nextgroupplot[title=Shallow JS (English),legend entries={Training error,Validation error},
+      legend to name=overfitlegend,legend columns=2,ymin=0.1,ymax=0.6]
+    \addplot table[x=epoch,y=train] {data/errors-rownorm-english.txt};
+    \addplot table[x=epoch,y=valid] {data/errors-rownorm-english.txt};
+    \nextgroupplot[title=Shallow JS (Xitsonga),ymin=0.1,ymax=0.6]
+    \addplot table[x=epoch,y=train] {data/errors-rownorm-xitsonga.txt};
+    \addplot table[x=epoch,y=valid] {data/errors-rownorm-xitsonga.txt};
+    \nextgroupplot[title=Deep coscos$^2$ (English),ymin=0,ymax=0.5]
+    \addplot table[x=epoch,y=train] {data/errors-deep-english.txt};
+    \addplot table[x=epoch,y=valid] {data/errors-deep-english.txt};
+    \nextgroupplot[title=Deep coscos$^2$ (Xitsonga),ymin=0,ymax=0.5]
+    \addplot table[x=epoch,y=train] {data/errors-deep-xitsonga.txt};
+    \addplot table[x=epoch,y=valid] {data/errors-deep-xitsonga.txt};
+   
+   %\nextgroupplot[title=Xitsonga,xlabel=Penalty ($\lambda$),ylabel=Divergence/entropy]
+   %\addplot table[x=lambda,y=js-v] {data/entropy_xitsonga.txt};
+   %\addplot table[x=lambda,y=same-js-v] {data/entropy_xitsonga.txt};
+   %\addplot table[x=lambda,y=diff-js-v] {data/entropy_xitsonga.txt};
+   %\addplot table[x=lambda,y=entropy-v] {data/entropy_xitsonga.txt};
+  \end{groupplot}
+  \node[yshift=1.6cm] at ($(group c1r1.north)!.5!(group c2r1.north)$) {\ref{overfitlegend}};
+ \end{tikzpicture}
+ 
+ \caption{\label{fig:overfitting}Comparison of training and validation errors for the shallow JS loss-based and the deep coscos$^2$-based models.}
+\end{figure}
+
+\Cref{fig:overfitting} shows the training and validation errors from two of the models: The proposed model with the rebalanced JS loss, and the deep model trained with the coscos$^2$ loss.
+We can see that the training and validation errors clearly decrease at different rates for the deep models, while the validation error more closely follows the training error for the shallow models.
+This indicates that the shallow model is indeed more robust to overfitting.
+This in turn makes it possible to train the shallow models for longer without causing the validation error to increase.
+
+\subsection{Model sparsity}
+
+We find that the shallow models are indeed sparse after training when enforcing the entropy penalty.
+For instance, after training the model with $\lambda = 0.1$ using the non-rebalanced JS loss, we find that the largest element on each row of $\mat W$ is on average $0.98$ for English and $0.92$ for Xitsonga across the 1024 rows.
+We can inspect $\mat W$ to see how many of the $64$ outputs are actually being used by the model.
+We take the sum over each column of $\mat W$, which roughly corresponds to how many inputs are mapped to each output.
+We find that for both English and Xitsonga, this sum is above $0.5$ for only a minority of outputs: 11 outputs for English, and 10 outputs for Xitsonga.
+For English, where $\mat W$ is particularly sparse, none of the other 53 sums even reach $0.05$.
+As only 10 or 11 output classes is unrealistic in terms of the number of phonemes present in the languages, this confirms the need to reweight the same-class and different-class losses.
+
+\subsection{ABX scores}
+
 \begin{sidewaystable}
  \centering
  \begin{tabular}{llrrrrrr} \toprule
@@ -215,12 +235,12 @@ For the model with binary output, however, we use a distance of 0 for identical 
     & DPGMM + LDA \parencite{heck2016unsupervised} & --- & 10.6 & 16.0 & --- & 8.0 & 12.6 \\ \bottomrule
  \end{tabular}
 
- \caption{\label{tab:abx}ABX and silhouette results for the models described in \cref{sec:model-desc}.}
+ \caption{\label{tab:abx}ABX and silhouette results for the models described in \cref{sec:models}.}
 \end{sidewaystable}
 
-
-The results of the ABX evaluation are shown in \cref{tab:abx}, along with the silhouette for each model.
-The silhouette is calculated as in \cref{sec:rebalanced-exp}; higher is better.
+We use the ABX toolkit provided for the Zero Resource Speech Challenge \parencite{versteegh2015zero} for evaluating the models.
+The results of the evaluation are shown in \cref{tab:abx}, along with the silhouette for each model.
+The silhouette is calculated as in \cref{sec:tuning-rebalanced,sec:rebalanced-exp}; higher is better.
 The ABX scores are shown as the percentage of ABX triples for which the model answered incorrectly; lower is better.
 We show results for both the within-speaker and across-speaker ABX tasks.
 

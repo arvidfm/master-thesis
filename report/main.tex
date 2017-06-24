@@ -39,7 +39,8 @@
 \usepackage{amsmath}
 \usepackage{amssymb}
 \usepackage{amsfonts}
-\usepackage[noabbrev]{cleveref}
+\usepackage[noabbrev,capitalise]{cleveref}
+\usepackage{microtype}
 
 \usepackage{neuralnetwork}
 \usepackage{lipsum}
@@ -73,6 +74,8 @@
 \newcommand{\mat}[1]{\boldsymbol{\mathbf{#1}}}
 
 % -- options
+\overfullrule=5mm % mark overfull hboxes
+
 \pgfplotsset{
   compat=newest,
   every axis/.style={
@@ -87,8 +90,10 @@
 \usetikzlibrary{positioning,fit}
 \usepgfplotslibrary{groupplots}
 % modify cref ranges for use with subfigures
-\Crefrangeformat{figure}{Figures~\subfigrange{#1}{#2}{#3}{#4}{#5}{#6}}
-\crefrangeformat{figure}{figures~\subfigrange{#1}{#2}{#3}{#4}{#5}{#6}}
+\crefname{subfigure}{figure}{figures}
+%\Crefrangeformat{figure}{Figures~\subfigrange{#1}{#2}{#3}{#4}{#5}{#6}}
+%\crefrangeformat{figure}{Figures~\subfigrange{#1}{#2}{#3}{#4}{#5}{#6}}
+\crefrangelabelformat{subfigure}{#3#1#4--#5(\crefstripprefix{#1}{#2}#6}
 % make todo notes appear in the inner margin
 \reversemarginpar
 % use parentheses for subfigure references, e.g. 2.1(b)
@@ -122,8 +127,10 @@
 \include{05-experiments}
 \include{06-discussion}
 
+\sloppy
 \newrefcontext[sorting=nyt] % sort by name in the bibliography
 \printbibliography[heading=bibintoc] % include bibliography in table of contents
+\fussy
 
 \include{99-appendix}
 
