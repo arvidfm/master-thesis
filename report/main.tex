@@ -41,6 +41,7 @@
 \usepackage{amsfonts}
 \usepackage[noabbrev,capitalise]{cleveref}
 \usepackage{microtype}
+\usepackage{pdfpages}
 
 \usepackage{neuralnetwork}
 \usepackage{lipsum}
@@ -112,6 +113,9 @@
 
 \begin{document}
 
+\includepdf[pages=1,pagecommand={\thispagestyle{empty}}]{cover.pdf}
+\cleardoublepage
+
 \frontmatter
 
 \titlepage
@@ -133,5 +137,9 @@
 \fussy
 
 \include{99-appendix}
+
+\cleartoleftpage
+
+\includepdf[pages=2,pagecommand={\thispagestyle{empty}}]{cover.pdf}
 
 \end{document}
