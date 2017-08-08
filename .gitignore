@@ -5,6 +5,7 @@
 *.log
 *.pdf
 !main.pdf
+!cover.pdf
 *.run.xml
 *.toc
 *.kilepr
@@ -13,7 +14,6 @@
 __pycache__
 buckeyecorpus
 *.out
-*.dat
 *.script
 *.table
 *.pkl
