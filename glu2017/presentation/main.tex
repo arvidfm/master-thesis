@@ -163,7 +163,7 @@
     title={Time domain},
     xtick={0, 0.1, 0.2, 0.3}
   ]
-  \addplot[blue] table {../report/data/samples.txt};
+  \addplot[blue] table {data/samples.txt};
   \node[draw, rectangle, fit={(axis cs:0.065,9000)(axis cs:0.090,-7000)},ultra thick] (window) {};
    
   \nextgroupplot[
@@ -174,8 +174,8 @@
     ylabel={Energy (\si{\dB})},
     ytick=\empty
   ]
-  \addplot[blue] table[y=energy] {../report/data/spectrum.txt};
-  \addplot[red,very thick,dashed] table[y=envelope] {../report/data/spectrum.txt};
+  \addplot[blue] table[y=energy] {data/spectrum.txt};
+  \addplot[red,very thick,dashed] table[y=envelope] {data/spectrum.txt};
   \end{groupplot}
   
   \path[thick,->] (window.north) edge[bend left=10] (group c2r1.north west);
@@ -210,7 +210,7 @@
 	    scatter/classes={
 	      0={red},1={blue},2={red},3={blue},4={red},5={blue}
 	    }
-	  ] table [x index=1,y index=0,meta=label] {../../taligen/project/report/dialect-formants.dat};
+	  ] table [x index=1,y index=0,meta=label] {figures/dialect-formants.dat};
 	  %\legend{Male speakers,Female speakers}
         \end{axis}
       \end{tikzpicture}
@@ -444,19 +444,19 @@
   \begin{frame}
     \frametitle{Spectrogram features}
    \centering
-   \includegraphics[width=6cm]{../report/data/spectrum-speaker-1-crop}
+   \includegraphics[width=6cm]{data/spectrum-speaker-1-crop}
   \end{frame}
   
   \begin{frame}
     \frametitle{GMM features (input)}
    \centering
-   \includegraphics[width=6cm]{../report/data/gmm-posteriorgrams-speaker-1-crop}
+   \includegraphics[width=6cm]{data/gmm-posteriorgrams-speaker-1-crop}
   \end{frame}
   
   \begin{frame}
     \frametitle{Merged GMM features (output)}
    \centering
-   \includegraphics[width=6cm]{../report/data/reduced-posteriorgrams-speaker-1-crop}
+   \includegraphics[width=6cm]{data/reduced-posteriorgrams-speaker-1-crop}
   \end{frame}
 
   \section{Experiments}
