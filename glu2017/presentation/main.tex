@@ -1,12 +1,16 @@
+% note that I have changed the code to work with pdflatex instead of xelatex
+% Giampiero
 \documentclass[british]{beamer}
+\usepackage[utf8]{inputenc}
 \usepackage{pgfpages}
 
 \mode<presentation>
-\usetheme{Berlin}
-\usecolortheme{beaver}
+%\usetheme{Berlin}
+%\usecolortheme{beaver}
 %\setbeameroption{show notes on second screen=right}
-\beamertemplatenavigationsymbolsempty
-\setbeamercovered{transparent}
+%\beamertemplatenavigationsymbolsempty
+%\setbeamercovered{transparent}
+\setbeamertemplate{navigation symbols}{}
 
 \usepackage{graphicx}
 \usepackage{amsmath}
@@ -16,7 +20,7 @@
 \usepackage{pgfplots}
 \usepackage{pgfplotstable}
 \usepackage{booktabs}
-\usepackage{fontspec}
+%\usepackage{fontspec}
 \usepackage{babel}
 \usepackage{url}
 \usepackage{csquotes}
@@ -30,13 +34,13 @@
 \addbibresource{bibliography/linguistics.bib}
 
 % workaround for invisible text when using notes (https://tex.stackexchange.com/a/306662)
-\makeatletter 
-\def\beamer@framenotesbegin{% at beginning of slide
-     \usebeamercolor[fg]{normal text}
-      \gdef\beamer@noteitems{}% 
-      \gdef\beamer@notes{}% 
-}
-\makeatother
+%\makeatletter 
+%\def\beamer@framenotesbegin{% at beginning of slide
+%     \usebeamercolor[fg]{normal text}
+%      \gdef\beamer@noteitems{}% 
+%      \gdef\beamer@notes{}% 
+%}
+%\makeatother
 
 %\newfontfamily{\ipafont}{CMU Serif}
 
@@ -90,17 +94,15 @@
 }
 
 \title[Unsupervised learning with linear siamese networks]{Increasing speaker invariance in unsupervised speech learning by partitioning probabilistic models using linear siamese networks}
-\author{Arvid Fahlström Myrman}
-\institute[KTH]{KTH Royal Institute of Technology\\Department of Speech, Music and Hearing}
+\author{Arvid Fahlström Myrman and Giampiero Salvi}
+\institute[KTH]{KTH Royal Institute of Technology}
+\date{GLU 2017, 25th August 2017}
 
 \begin{document}
   %\section{Introduction}
   
   \begin{frame}
    \titlepage
-   
-   \note[item]{mouthful, but I'll do my best to explain everything}
-   \note[item]{note, though, lot of topics to go through, deserve own presentation, need to skim over, don't hesitate to ask after the presentation}
   \end{frame}
   
   \section{Background}
