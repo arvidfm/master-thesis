@@ -32,6 +32,7 @@
 \addbibresource{bibliography/strings.bib}
 \addbibresource{bibliography/citations.bib}
 \addbibresource{bibliography/linguistics.bib}
+\addbibresource{extra.bib}
 
 % workaround for invisible text when using notes (https://tex.stackexchange.com/a/306662)
 %\makeatletter 
@@ -253,19 +254,30 @@
     \frametitle{Previous work}
     
     \begin{itemize}
-     \item Deep autoencoder\footfullcite{badino2015discovering}
-     \item Contrastive autoencoder\footfullcite{renshaw2015comparison}
-     \begin{itemize}
+    \item Deep autoencoder\footfullcite{badino2015discovering}
+    \item Contrastive autoencoder\footfullcite{renshaw2015comparison}
+      \begin{itemize}
       \item ``Auto''encode frame to other frame of same type
-     \end{itemize}
-     \item Dirichlet process GMM clustering\footfullcite{chen2015parallel}
-     \begin{itemize}
+      \end{itemize}
+    \item Dirichlet process GMM clustering\footfullcite{chen2015parallel}
+      \begin{itemize}
       \item Surprisingly performant
      \end{itemize}
-    \end{itemize}
+   \end{itemize}
     
-    \note[item]{vocal tract length normalization}
-  \end{frame}
+   \note[item]{vocal tract length normalization}
+ \end{frame}
+  
+  \begin{frame}
+    \frametitle{Previous work (other data)}
+    
+    \begin{itemize}
+    \item Incremental GMM clustering\footfullcite{gs:Salvi2005a}
+   \item Imitation learning\footfullcite{gs:AnanthAndSalvi2011}
+   \end{itemize}
+    
+   \note[item]{vocal tract length normalization}
+ \end{frame}
   
   \begin{frame}
     \frametitle{Siamese networks for representation learning\footfullcite{synnaeve2014phonetics}}
